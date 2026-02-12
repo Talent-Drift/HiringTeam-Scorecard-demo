@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hiring Performance Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #f0f2f5;
+            color: #2d3748;
+        }
+        
+        .header {
+            background: #475569;
+            color: white;
+            padding: 16px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .header-icons {
+            display: flex;
+            gap: 24px;
+        }
+        
+        .header-icons svg {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            opacity: 0.9;
+        }
+        
+        .header-icons svg:hover {
+            opacity: 1;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 32px auto;
+            padding: 0 48px;
+        }
+        
+        .top-metrics {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: auto repeat(5, 1fr);
+            gap: 32px;
+            align-items: center;
+        }
+        
+        .team-score {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .team-score-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #f97316;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .team-score-info h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .team-score-info p {
+            font-size: 14px;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .trend-down {
+            color: #ef4444;
+        }
+        
+        .metric-box {
+            text-align: left;
+        }
+        
+        .metric-label {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+        
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        
+        .metric-value.secondary {
+            font-size: 24px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 24px;
+        }
+        
+        .roles-table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .roles-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .roles-table thead {
+            background: #f1f5f9;
+        }
+        
+        .roles-table th {
+            padding: 16px 20px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .roles-table td {
+            padding: 20px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 15px;
+            color: #1e293b;
+        }
+        
+        .roles-table tbody tr:hover {
+            background: #f8fafc;
+        }
+        
+        .role-title {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .department {
+            color: #64748b;
+        }
+        
+        .person-name {
+            font-weight: 500;
+        }
+        
+        .score-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 15px;
+            min-width: 48px;
+            text-align: center;
+        }
+        
+        .score-green {
+            background: #10b981;
+            color: white;
+        }
+        
+        .score-orange {
+            background: #f97316;
+            color: white;
+        }
+        
+        .score-red {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .action-items {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .action-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .action-red {
+            background: #ef4444;
+        }
+        
+        .action-orange {
+            background: #f97316;
+        }
+        
+        .action-blue {
+            background: #3b82f6;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn:hover {
+            border-color: #cbd5e0;
+        }
+        
+        .filter-btn.active {
+            background: #475569;
+            color: white;
+            border-color: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Hiring Performance Dashboard</h1>
+        <div class="header-icons">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="top-metrics">
+            <div class="team-score">
+                <div class="team-score-circle">76</div>
+                <div class="team-score-info">
+                    <h3>Team Score</h3>
+                    <p class="trend-down">▼ last week</p>
+                </div>
+            </div>
+            
+            <div class="metric-box">
+                <div class="metric-label">Open Roles:</div>
+                <div class="metric-value">12</div>
+            </div>
+            
+            <div class="metric-box">
+                <div class="metric-label">Avg Recruiter Score:</div>
+                <div class="metric-value secondary">78</div>
+            </div>
+            
+            <div class="metric-box">
+                <div class="metric-label">Avg Manager Score:</div>
+                <div class="metric-value secondary">74</div>
+            </div>
+            
+            <div class="metric-box">
+                <div class="metric-label">Avg Time to Feedback:</div>
+                <div class="metric-value secondary">52 <span style="font-size: 14px; font-weight: 400;">hrs</span></div>
+            </div>
+            
+            <div class="metric-box">
+                <div class="metric-label">Avg Stage Time:</div>
+                <div class="metric-value secondary">3.6 <span style="font-size: 14px; font-weight: 400;">days</span></div>
+            </div>
+        </div>
+        
+        <h2 class="section-title">Open Roles Overview</h2>
+        
+        <div class="filters">
+            <button class="filter-btn active">All Departments</button>
+            <button class="filter-btn">Engineering</button>
+            <button class="filter-btn">Sales</button>
+            <button class="filter-btn">Marketing</button>
+            <button class="filter-btn">Critical Only</button>
+        </div>
+        
+        <div class="roles-table-container">
+            <table class="roles-table">
+                <thead>
+                    <tr>
+                        <th>Role</th>
+                        <th>Department</th>
+                        <th>Recruiter</th>
+                        <th>Rec. Score</th>
+                        <th>Hiring Manager</th>
+                        <th>Mgr. Score</th>
+                        <th>Combined Score</th>
+                        <th>Open Since</th>
+                        <th>Action Items</th>
+                    </tr>
+                </thead>
+                <tbody id="roles-tbody">
+                    <!-- Data will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        // Sample data matching the screenshot design
+        const rolesData = [
+            {
+                role: 'Marketing Manager',
+                department: 'Marketing',
+                recruiter: 'Alice J.',
+                recScore: 82,
+                hiringManager: 'Bob K.',
+                mgrScore: 75,
+                combinedScore: 79,
+                openSince: '14 days',
+                actions: [{type: 'red', text: 'Feedback overdue'}]
+            },
+            {
+                role: 'Software Engineer',
+                department: 'Engineering',
+                recruiter: 'Charlie M.',
+                recScore: 90,
+                hiringManager: 'Dana L.',
+                mgrScore: 88,
+                combinedScore: 89,
+                openSince: '10 days',
+                actions: [{type: 'blue', text: 'Stage delay'}]
+            },
+            {
+                role: 'Sales Associate',
+                department: 'Sales',
+                recruiter: 'Emily R.',
+                recScore: 65,
+                hiringManager: 'Frank S.',
+                mgrScore: 70,
+                combinedScore: 68,
+                openSince: '21 days',
+                actions: [{type: 'orange', text: '2 feedback overdue, 3 stage stalled'}]
+            },
+            {
+                role: 'Product Designer',
+                department: 'Design',
+                recruiter: 'Sarah T.',
+                recScore: 88,
+                hiringManager: 'Mike H.',
+                mgrScore: 72,
+                combinedScore: 80,
+                openSince: '8 days',
+                actions: [{type: 'red', text: 'Stage delay'}]
+            },
+            {
+                role: 'Ops Analyst',
+                department: 'Operations',
+                recruiter: 'David N.',
+                recScore: 75,
+                hiringManager: 'Karen W.',
+                mgrScore: 60,
+                combinedScore: 67,
+                openSince: '30 days',
+                actions: [{type: 'red', text: 'Feedback overdue'}]
+            },
+            {
+                role: 'Frontend Developer',
+                department: 'Engineering',
+                recruiter: 'Charlie M.',
+                recScore: 90,
+                hiringManager: 'Dana L.',
+                mgrScore: 88,
+                combinedScore: 89,
+                openSince: '5 days',
+                actions: []
+            },
+            {
+                role: 'Customer Success Manager',
+                department: 'Sales',
+                recruiter: 'Emily R.',
+                recScore: 65,
+                hiringManager: 'Frank S.',
+                mgrScore: 70,
+                combinedScore: 68,
+                openSince: '18 days',
+                actions: [{type: 'orange', text: 'Stage delay'}]
+            },
+            {
+                role: 'Data Analyst',
+                department: 'Analytics',
+                recruiter: 'Alice J.',
+                recScore: 82,
+                hiringManager: 'Tom P.',
+                mgrScore: 78,
+                combinedScore: 80,
+                openSince: '12 days',
+                actions: [{type: 'blue', text: 'Awaiting feedback'}]
+            },
+            {
+                role: 'DevOps Engineer',
+                department: 'Engineering',
+                recruiter: 'David N.',
+                recScore: 75,
+                hiringManager: 'Dana L.',
+                mgrScore: 88,
+                combinedScore: 82,
+                openSince: '7 days',
+                actions: []
+            },
+            {
+                role: 'Account Executive',
+                department: 'Sales',
+                recruiter: 'Sarah T.',
+                recScore: 88,
+                hiringManager: 'Frank S.',
+                mgrScore: 70,
+                combinedScore: 79,
+                openSince: '25 days',
+                actions: [{type: 'red', text: 'Multiple delays'}]
+            },
+            {
+                role: 'UX Researcher',
+                department: 'Design',
+                recruiter: 'Alice J.',
+                recScore: 82,
+                hiringManager: 'Mike H.',
+                mgrScore: 72,
+                combinedScore: 77,
+                openSince: '11 days',
+                actions: [{type: 'orange', text: 'Stage delay'}]
+            },
+            {
+                role: 'Product Manager',
+                department: 'Product',
+                recruiter: 'Charlie M.',
+                recScore: 90,
+                hiringManager: 'Lisa K.',
+                mgrScore: 85,
+                combinedScore: 87,
+                openSince: '6 days',
+                actions: []
+            }
+        ];
+        
+        function getScoreClass(score) {
+            if (score >= 80) return 'score-green';
+            if (score >= 65) return 'score-orange';
+            return 'score-red';
+        }
+        
+        function getActionIconClass(type) {
+            if (type === 'red') return 'action-red';
+            if (type === 'orange') return 'action-orange';
+            return 'action-blue';
+        }
+        
+        function renderRoles() {
+            const tbody = document.getElementById('roles-tbody');
+            tbody.innerHTML = rolesData.map(role => `
+                <tr>
+                    <td class="role-title">${role.role}</td>
+                    <td class="department">${role.department}</td>
+                    <td class="person-name">${role.recruiter}</td>
+                    <td><span class="score-badge ${getScoreClass(role.recScore)}">${role.recScore}</span></td>
+                    <td class="person-name">${role.hiringManager}</td>
+                    <td><span class="score-badge ${getScoreClass(role.mgrScore)}">${role.mgrScore}</span></td>
+                    <td><span class="score-badge ${getScoreClass(role.combinedScore)}">${role.combinedScore}</span></td>
+                    <td>${role.openSince}</td>
+                    <td>
+                        ${role.actions.length > 0 ? `
+                            <div class="action-items">
+                                <div class="action-icon ${getActionIconClass(role.actions[0].type)}">!</div>
+                                <span>${role.actions[0].text}</span>
+                            </div>
+                        ` : '<span style="color: #10b981;">✓ On track</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Initialize
+        renderRoles();
+        
+        // Filter functionality
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                // In a real app, you'd filter the data here
+            });
+        });
+    </script>
+</body>
+</html>
