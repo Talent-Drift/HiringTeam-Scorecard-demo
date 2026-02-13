@@ -1,5 +1,6 @@
 """
-Advanced Team Scorecard Dashboard - Enhanced Design & Department Organization
+Advanced Team Scorecard Dashboard - Professional Design
+Beige/Navy/Sand color scheme with status indicators
 """
 
 import streamlit as st
@@ -13,69 +14,143 @@ st.set_page_config(page_title="Talent Score", page_icon="🏆", layout="wide")
 # ==================== CUSTOM STYLING ====================
 
 def apply_custom_css():
-    """Apply custom CSS for better design"""
+    """Apply professional beige/navy/sand color scheme"""
     st.markdown("""
     <style>
-        /* Import modern font */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        /* Import professional fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Montserrat:wght@400;500;600;700&display=swap');
         
-        /* Global font */
+        /* Global styling */
         html, body, [class*="css"] {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Montserrat', sans-serif;
+            color: #2c3e50;
         }
         
-        /* Fix text overflow issues */
+        /* Headers use serif font */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Libre Baskerville', serif;
+            color: #1a365d;
+        }
+        
+        /* Fix text overflow */
         .stMarkdown, .stText {
             word-wrap: break-word;
             overflow-wrap: break-word;
         }
         
-        /* Better button styling */
+        /* Professional buttons */
         .stButton>button {
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: 1px solid #d4a574;
+            background-color: #f5f5dc;
+            color: #1a365d;
         }
         
         .stButton>button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background-color: #1a365d;
+            color: #f5f5dc;
+            border-color: #1a365d;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(26, 54, 93, 0.2);
         }
         
-        /* Card-like containers */
+        /* Expanders */
         .stExpander {
-            border-radius: 10px;
-            border: 1px solid #e0e0e0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            border: 1px solid #d4a574;
+            background-color: #faf8f3;
         }
         
-        /* Better metrics */
+        /* Metrics */
         [data-testid="stMetricValue"] {
             font-size: 2em;
             font-weight: 700;
+            color: #1a365d;
         }
         
         /* Department headers */
         .department-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin: 20px 0 10px 0;
+            background: linear-gradient(135deg, #1a365d 0%, #2c5f9e 100%);
+            color: #f5f5dc;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 20px 0 15px 0;
             font-weight: 600;
-            font-size: 1.2em;
+            font-size: 1.1em;
+            font-family: 'Libre Baskerville', serif;
         }
         
-        /* Team role badges */
-        .role-badge {
+        /* Status indicators */
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
             display: inline-block;
-            background: #f0f2f6;
-            padding: 4px 12px;
+            margin-right: 8px;
+        }
+        
+        .status-green {
+            background-color: #4a7c59;
+            box-shadow: 0 0 8px rgba(74, 124, 89, 0.3);
+        }
+        
+        .status-yellow {
+            background-color: #d4a574;
+            box-shadow: 0 0 8px rgba(212, 165, 116, 0.3);
+        }
+        
+        .status-red {
+            background-color: #a0522d;
+            box-shadow: 0 0 8px rgba(160, 82, 45, 0.3);
+        }
+        
+        /* Sign-in cards */
+        .signin-card {
+            padding: 50px 30px;
             border-radius: 12px;
-            font-size: 0.85em;
-            font-weight: 500;
-            color: #4a5568;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 15px;
+            border: 2px solid transparent;
+        }
+        
+        .signin-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            border-color: #1a365d;
+        }
+        
+        .signin-recruiter {
+            background: linear-gradient(135deg, #f5f5dc 0%, #e8dcc4 100%);
+        }
+        
+        .signin-hm {
+            background: linear-gradient(135deg, #d4a574 0%, #c99a65 100%);
+        }
+        
+        .signin-leader {
+            background: linear-gradient(135deg, #1a365d 0%, #2c5f9e 100%);
+            color: #f5f5dc;
+        }
+        
+        .signin-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .signin-title {
+            font-family: 'Libre Baskerville', serif;
+            font-size: 1.8em;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        /* Popover styling */
+        [data-testid="stPopover"] {
+            background-color: #faf8f3;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -205,6 +280,26 @@ class ScorecardEngine:
         score = 100.0 + metric_violations['penalty'].sum()
         return max(0.0, score)
 
+# ==================== UTILITY FUNCTIONS ====================
+
+def get_status_indicator(score, high_severity_count=0):
+    """Return status color based on score and severity"""
+    if score >= 70 and high_severity_count == 0:
+        return "green"
+    elif score >= 50 or high_severity_count <= 2:
+        return "yellow"
+    else:
+        return "red"
+
+def render_status(status):
+    """Render status indicator"""
+    if status == "green":
+        st.markdown('<div class="status-indicator status-green"></div>', unsafe_allow_html=True)
+    elif status == "yellow":
+        st.markdown('<div class="status-indicator status-yellow"></div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="status-indicator status-red"></div>', unsafe_allow_html=True)
+
 # ==================== DATA LOADING ====================
 
 @st.cache_data
@@ -226,20 +321,26 @@ def load_data():
         team_data.columns = ['recruiter', 'hm', 'department', 'role', 'roles', 'candidates']
         
         team_data = team_data.merge(
-            recruiter_scores[['name', 'final_score', 'total_violations']],
+            recruiter_scores[['name', 'final_score', 'total_violations', 'high_severity']],
             left_on='recruiter', right_on='name', how='left'
-        ).rename(columns={'final_score': 'recruiter_score', 'total_violations': 'recruiter_violations'})
+        ).rename(columns={'final_score': 'recruiter_score', 'total_violations': 'recruiter_violations', 'high_severity': 'recruiter_high'})
         
         team_data = team_data.merge(
-            hm_scores[['name', 'final_score', 'total_violations']],
+            hm_scores[['name', 'final_score', 'total_violations', 'high_severity']],
             left_on='hm', right_on='name', how='left'
-        ).rename(columns={'final_score': 'hm_score', 'total_violations': 'hm_violations'})
+        ).rename(columns={'final_score': 'hm_score', 'total_violations': 'hm_violations', 'high_severity': 'hm_high'})
         
         team_data['team_score'] = (team_data['recruiter_score'] + team_data['hm_score']) / 2
         team_data['total_violations'] = team_data['recruiter_violations'] + team_data['hm_violations']
+        team_data['total_high'] = team_data['recruiter_high'] + team_data['hm_high']
         
-        team_data = team_data[['department', 'role', 'recruiter', 'hm', 'recruiter_score', 'hm_score', 
-                                'team_score', 'total_violations', 'roles', 'candidates']]
+        # Add status
+        team_data['status'] = team_data.apply(
+            lambda row: get_status_indicator(row['team_score'], row['total_high']), axis=1
+        )
+        
+        team_data = team_data[['status', 'department', 'role', 'recruiter', 'hm', 'recruiter_score', 'hm_score', 
+                                'team_score', 'total_violations', 'total_high', 'roles', 'candidates']]
         
         return df, team_data, recruiter_scores, hm_scores, violations
         
@@ -273,45 +374,50 @@ def show_signin():
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown("""
             <div style='text-align: center; padding: 40px 0;'>
-                <h1 style='font-size: 4em; margin: 0; color: #1f77b4;'>⭐</h1>
-                <h1 style='font-size: 3em; margin: 10px 0; font-weight: bold;'>Talent Score</h1>
-                <p style='font-size: 1.2em; color: #666;'>Performance tracking for recruiting teams</p>
+                <h1 style='font-size: 4em; margin: 0; color: #1a365d;'>⭐</h1>
+                <h1 style='font-size: 3em; margin: 10px 0; font-weight: bold; color: #1a365d;'>Talent Score</h1>
+                <p style='font-size: 1.2em; color: #6b7280; margin-top: 10px;'>Performance tracking for recruiting teams</p>
             </div>
         """, unsafe_allow_html=True)
         
-        st.markdown("<h3 style='text-align: center; margin: 30px 0;'>Select Your Role</h3>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Three clickable cards
         col_a, col_b, col_c = st.columns(3)
         
         with col_a:
-            st.markdown("""<div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                            padding: 40px 20px; border-radius: 15px; text-align: center; 
-                            box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 10px;'>
-                    <h2 style='color: white; font-size: 2.5em; margin: 0;'>👥</h2>
-                    <h3 style='color: white; margin: 15px 0 5px 0;'>Recruiter</h3>
-                </div>""", unsafe_allow_html=True)
-            if st.button("Sign in as Recruiter", use_container_width=True):
+            if st.button("", key="signin_recruiter", use_container_width=True, help="Sign in as Recruiter"):
+                pass  # Placeholder for styling
+            st.markdown("""
+                <div class='signin-card signin-recruiter' onclick='document.querySelector("[data-testid=\\'stButton\\'] button").click()'>
+                    <div class='signin-icon'>👥</div>
+                    <div class='signin-title'>Recruiter</div>
+                </div>
+            """, unsafe_allow_html=True)
+            # Hidden actual button
+            if st.button("Click Recruiter", key="btn_recruiter", help="Sign in"):
                 st.session_state['role'] = 'recruiter'
                 st.rerun()
         
         with col_b:
-            st.markdown("""<div style='background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
-                            padding: 40px 20px; border-radius: 15px; text-align: center; 
-                            box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 10px;'>
-                    <h2 style='color: white; font-size: 2.5em; margin: 0;'>🎯</h2>
-                    <h3 style='color: white; margin: 15px 0 5px 0;'>Hiring Team</h3>
-                </div>""", unsafe_allow_html=True)
-            if st.button("Sign in as Hiring Team", use_container_width=True):
+            st.markdown("""
+                <div class='signin-card signin-hm'>
+                    <div class='signin-icon'>🎯</div>
+                    <div class='signin-title'>Hiring Team</div>
+                </div>
+            """, unsafe_allow_html=True)
+            if st.button("Click Hiring Team", key="btn_hm"):
                 st.session_state['role'] = 'hiring_team'
                 st.rerun()
         
         with col_c:
-            st.markdown("""<div style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); 
-                            padding: 40px 20px; border-radius: 15px; text-align: center; 
-                            box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 10px;'>
-                    <h2 style='color: white; font-size: 2.5em; margin: 0;'>🏆</h2>
-                    <h3 style='color: white; margin: 15px 0 5px 0;'>Leader</h3>
-                </div>""", unsafe_allow_html=True)
-            if st.button("Sign in as Leader", use_container_width=True):
+            st.markdown("""
+                <div class='signin-card signin-leader'>
+                    <div class='signin-icon'>🏆</div>
+                    <div class='signin-title' style='color: #f5f5dc;'>Leader</div>
+                </div>
+            """, unsafe_allow_html=True)
+            if st.button("Click Leader", key="btn_leader"):
                 st.session_state['role'] = 'leader'
                 st.rerun()
 
@@ -325,7 +431,7 @@ def show_team_leaderboard(teams, df, violations):
         st.metric("Avg Score", f"{teams['team_score'].mean():.0f}/100")
     with col3:
         best_team = teams.nlargest(1, 'team_score').iloc[0]
-        st.metric("🥇 Top Team", f"{best_team['department']} - {best_team['role'][:20]}...")
+        st.metric("Top Team", f"{best_team['department']} - {best_team['role'][:20]}...")
     with col4:
         st.metric("Top Score", f"{teams['team_score'].max():.0f}/100")
     
@@ -335,13 +441,16 @@ def show_team_leaderboard(teams, df, violations):
         st.markdown("""
         **Team Score = Average of Recruiter + HM Scores**
         
-        **Metrics:** 🕐 Feedback (40%) | ⚡ Velocity (35%) | 🤝 Engagement (25%)
+        **Status Indicators:**
+        - 🟢 Green: Score ≥70 with no critical issues
+        - 🟡 Yellow: Score 50-69 or few critical issues
+        - 🔴 Red: Score <50 or multiple critical issues
         
-        **Severity:** 🔴 High (-10 to -15) | 🟡 Medium (-5 to -7) | 🟢 Low (-2 to -3)
+        **Metrics:** Feedback (40%) | Velocity (35%) | Engagement (25%)
         """)
     
     st.markdown("---")
-    st.subheader("🏅 Rankings by Department & Role")
+    st.subheader("Rankings by Department & Role")
     
     # Group by department
     sorted_teams = teams.sort_values(['department', 'team_score'], ascending=[True, False])
@@ -357,28 +466,29 @@ def show_team_leaderboard(teams, df, violations):
             st.markdown(f"<div class='department-header'>📁 {current_dept}</div>", unsafe_allow_html=True)
         
         rank += 1
-        score_color = "🟢" if row['team_score'] >= 70 else "🟡" if row['team_score'] >= 50 else "🔴"
         
-        col1, col2, col3, col4, col5 = st.columns([0.5, 3, 1.5, 1.5, 1])
+        col1, col2, col3, col4, col5, col6 = st.columns([0.5, 0.5, 3, 1.5, 1.5, 1])
         
         with col1:
             st.markdown(f"**#{rank}**")
         
         with col2:
-            # Role as main text, names on hover/click
-            st.markdown(f"**{row['role']}**")
-            with st.popover("👥 Team Members"):
-                st.write(f"**Recruiter:** {row['recruiter']}")
-                st.write(f"**Hiring Manager:** {row['hm']}")
+            render_status(row['status'])
         
         with col3:
-            st.markdown(f"{score_color} **{row['team_score']:.0f}/100**")
+            st.markdown(f"**{row['role']}**")
+            with st.popover("👥 Team"):
+                st.write(f"**Recruiter:** {row['recruiter']}")
+                st.write(f"**Manager:** {row['hm']}")
         
         with col4:
+            st.markdown(f"**{row['team_score']:.0f}**/100")
+        
+        with col5:
             st.caption(f"🚩 {row['total_violations']} issues")
             st.caption(f"📋 {row['roles']} roles")
         
-        with col5:
+        with col6:
             if st.button("View", key=f"team_{idx}"):
                 st.session_state['selected_team'] = idx
         
@@ -398,7 +508,7 @@ def show_team_leaderboard(teams, df, violations):
                         st.success("✅ No violations!")
                 
                 with col2:
-                    st.markdown(f"**🎯 HM: {row['hm']}**")
+                    st.markdown(f"**🎯 Manager: {row['hm']}**")
                     st.write(f"Score: {row['hm_score']:.0f}/100")
                     flags = get_top_flags(violations, row['hm'], 'hm')
                     if flags:
@@ -414,17 +524,20 @@ def show_individual_view(people, teams, violations, person_type='recruiter'):
     st.header(title)
     
     for idx, row in people.sort_values('final_score', ascending=False).iterrows():
-        col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+        status = get_status_indicator(row['final_score'], row['high_severity'])
+        
+        col1, col2, col3, col4, col5 = st.columns([0.5, 3, 1, 1, 1])
         
         with col1:
-            st.write(f"**{row['name']}**")
+            render_status(status)
         with col2:
+            st.write(f"**{row['name']}**")
+        with col3:
             if st.button(f"🚩 {row['total_violations']}", key=f"{person_type}_{idx}"):
                 st.session_state[f"show_{person_type}_{idx}"] = not st.session_state.get(f"show_{person_type}_{idx}", False)
-        with col3:
-            score_color = "🟢" if row['final_score'] >= 70 else "🟡" if row['final_score'] >= 50 else "🔴"
-            st.write(f"{score_color} {row['final_score']:.0f}/100")
         with col4:
+            st.write(f"**{row['final_score']:.0f}**/100")
+        with col5:
             col_name = 'recruiter' if person_type == 'recruiter' else 'hm'
             team_count = len(teams[teams[col_name] == row['name']])
             st.caption(f"Teams: {team_count}")
