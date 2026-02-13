@@ -1,632 +1,1066 @@
 """
-Advanced Team Scorecard Dashboard - Professional Design
-Beige/Navy/Sand color scheme with status indicators
+Recruiter Scorecard Dashboard
+Interactive web interface for viewing performance scores and metrics
 """
 
 import streamlit as st
 import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
+import plotly.express as px
+import plotly.graph_objects as go
+from scoring_engine import ScorecardEngine
+from datetime import datetime
+import json
+import os
 
 # Page config
-st.set_page_config(page_title="Talent Score", page_icon="🏆", layout="wide")
+st.set_page_config(
+    page_title="Recruiter Scorecard Demo",
+    page_icon="📊",
+    layout="wide"
+)
 
-# ==================== CUSTOM STYLING ====================
-
-def apply_custom_css():
-    """Apply professional beige/navy/sand color scheme"""
-    st.markdown("""
+# Custom CSS for better styling
+st.markdown("""
     <style>
-        /* Import professional fonts */
-        @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Montserrat:wght@400;500;600;700&display=swap');
-        
-        /* Global styling */
-        html, body, [class*="css"] {
-            font-family: 'Montserrat', sans-serif;
-            color: #2c3e50;
-        }
-        
-        /* Headers use serif font */
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Libre Baskerville', serif;
-            color: #1a365d;
-        }
-        
-        /* Fix text overflow */
-        .stMarkdown, .stText {
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
-        
-        /* Professional buttons */
-        .stButton>button {
-            border-radius: 6px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            border: 1px solid #d4a574;
-            background-color: #f5f5dc;
-            color: #1a365d;
-        }
-        
-        .stButton>button:hover {
-            background-color: #1a365d;
-            color: #f5f5dc;
-            border-color: #1a365d;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(26, 54, 93, 0.2);
-        }
-        
-        /* Expanders */
-        .stExpander {
-            border-radius: 8px;
-            border: 1px solid #d4a574;
-            background-color: #faf8f3;
-        }
-        
-        /* Metrics */
-        [data-testid="stMetricValue"] {
-            font-size: 2em;
-            font-weight: 700;
-            color: #1a365d;
-        }
-        
-        /* Department headers */
-        .department-header {
-            background: linear-gradient(135deg, #1a365d 0%, #2c5f9e 100%);
-            color: #f5f5dc;
-            padding: 12px 20px;
-            border-radius: 8px;
-            margin: 20px 0 15px 0;
-            font-weight: 600;
-            font-size: 1.1em;
-            font-family: 'Libre Baskerville', serif;
-        }
-        
-        /* Status indicators */
-        .status-indicator {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-        }
-        
-        .status-green {
-            background-color: #4a7c59;
-            box-shadow: 0 0 8px rgba(74, 124, 89, 0.3);
-        }
-        
-        .status-yellow {
-            background-color: #d4a574;
-            box-shadow: 0 0 8px rgba(212, 165, 116, 0.3);
-        }
-        
-        .status-red {
-            background-color: #a0522d;
-            box-shadow: 0 0 8px rgba(160, 82, 45, 0.3);
-        }
-        
-        /* Sign-in cards */
-        .signin-card {
-            padding: 50px 30px;
-            border-radius: 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin: 15px;
-            border: 2px solid transparent;
-        }
-        
-        .signin-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-            border-color: #1a365d;
-        }
-        
-        .signin-recruiter {
-            background: linear-gradient(135deg, #f5f5dc 0%, #e8dcc4 100%);
-        }
-        
-        .signin-hm {
-            background: linear-gradient(135deg, #d4a574 0%, #c99a65 100%);
-        }
-        
-        .signin-leader {
-            background: linear-gradient(135deg, #1a365d 0%, #2c5f9e 100%);
-            color: #f5f5dc;
-        }
-        
-        .signin-icon {
-            font-size: 3em;
-            margin-bottom: 15px;
-        }
-        
-        .signin-title {
-            font-family: 'Libre Baskerville', serif;
-            font-size: 1.8em;
-            font-weight: 700;
-            margin: 10px 0;
-        }
-        
-        /* Popover styling */
-        [data-testid="stPopover"] {
-            background-color: #faf8f3;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-
-# ==================== SCORING ENGINE ====================
-
-class ScorecardEngine:
-    """Advanced scoring engine with SLA-based violations"""
-    
-    FEEDBACK_SLA = 48
-    STAGE_SLAS = {'Phone Screen': 3, 'Technical Interview': 5, 'Onsite Interview': 7, 'Offer': 2}
-    PENALTIES = {
-        'feedback_timeliness': {'low': -2, 'medium': -5, 'high': -10},
-        'stage_velocity': {'low': -3, 'medium': -7, 'high': -15},
-        'hm_engagement': {'low': -2, 'medium': -5, 'high': -10}
+    .metric-card {
+        background-color: #f0f2f6;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 10px 0;
     }
-    WEIGHTS = {'feedback_timeliness': 0.40, 'stage_velocity': 0.35, 'hm_engagement': 0.25}
-    
-    def __init__(self, data):
-        self.data = data
-        self.violations = None
-    
-    def calculate_scores(self):
-        violations = []
-        for _, row in self.data.iterrows():
-            if pd.notna(row['interview_date']) and pd.notna(row['feedback_date']):
-                violations.extend(self._check_feedback_timeliness(row))
-            if pd.notna(row['stage_start_date']):
-                violations.extend(self._check_stage_velocity(row))
-            violations.extend(self._check_hm_engagement(row))
-        self.violations = pd.DataFrame(violations) if violations else pd.DataFrame()
-        return self.violations
-    
-    def _check_feedback_timeliness(self, row):
-        violations = []
-        interview_date = pd.to_datetime(row['interview_date'])
-        feedback_date = pd.to_datetime(row['feedback_date'])
-        delay_hours = (feedback_date - interview_date).total_seconds() / 3600
-        
-        if delay_hours > self.FEEDBACK_SLA:
-            severity = 'high' if delay_hours > 96 else 'medium' if delay_hours > 72 else 'low'
-            violations.append({
-                'requisition_id': row['requisition_id'], 'candidate_id': row['candidate_id'],
-                'recruiter_name': row['recruiter_name'], 'hiring_manager_name': row['hiring_manager_name'],
-                'metric': 'feedback_timeliness', 'severity': severity,
-                'penalty': self.PENALTIES['feedback_timeliness'][severity],
-                'stage': row['current_stage'], 'team': row['team'],
-                'description': f"Feedback delayed {delay_hours:.0f} hours"
-            })
-        return violations
-    
-    def _check_stage_velocity(self, row):
-        violations = []
-        stage = row['current_stage']
-        if stage not in self.STAGE_SLAS:
-            return violations
-        
-        stage_start = pd.to_datetime(row['stage_start_date'])
-        days_in_stage = (datetime.now() - stage_start).days
-        sla_days = self.STAGE_SLAS[stage]
-        
-        if days_in_stage > sla_days:
-            days_over = days_in_stage - sla_days
-            severity = 'high' if days_over > 7 else 'medium' if days_over > 3 else 'low'
-            violations.append({
-                'requisition_id': row['requisition_id'], 'candidate_id': row['candidate_id'],
-                'recruiter_name': row['recruiter_name'], 'hiring_manager_name': row['hiring_manager_name'],
-                'metric': 'stage_velocity', 'severity': severity,
-                'penalty': self.PENALTIES['stage_velocity'][severity],
-                'stage': stage, 'team': row['team'],
-                'description': f"Stage stuck {days_over} days over SLA"
-            })
-        return violations
-    
-    def _check_hm_engagement(self, row):
-        violations = []
-        if np.random.random() < 0.2:
-            severity = np.random.choice(['low', 'medium', 'high'], p=[0.5, 0.3, 0.2])
-            missing_count = np.random.randint(5, 10) if severity == 'high' else np.random.randint(3, 5) if severity == 'medium' else np.random.randint(1, 3)
-            description = f"Missing {missing_count} feedback responses" if severity != 'low' else "Delayed responses"
-            violations.append({
-                'requisition_id': row['requisition_id'], 'candidate_id': row['candidate_id'],
-                'recruiter_name': row['recruiter_name'], 'hiring_manager_name': row['hiring_manager_name'],
-                'metric': 'hm_engagement', 'severity': severity,
-                'penalty': self.PENALTIES['hm_engagement'][severity],
-                'stage': row['current_stage'], 'team': row['team'],
-                'description': description
-            })
-        return violations
-    
-    def score_by_person(self, violations, person_type='recruiter'):
-        if violations.empty:
-            people = self.data['recruiter_name'].unique() if person_type == 'recruiter' else self.data['hiring_manager_name'].unique()
-            return pd.DataFrame([{
-                'name': p, 'final_score': 100.0, 'feedback_score': 100.0,
-                'velocity_score': 100.0, 'engagement_score': 100.0,
-                'total_violations': 0, 'high_severity': 0, 'medium_severity': 0, 'low_severity': 0
-            } for p in people])
-        
-        people = self.data['recruiter_name'].unique() if person_type == 'recruiter' else self.data['hiring_manager_name'].unique()
-        scores = []
-        col_name = 'recruiter_name' if person_type == 'recruiter' else 'hiring_manager_name'
-        
-        for person in people:
-            person_violations = violations[violations[col_name] == person]
-            feedback_score = self._calculate_metric_score(person_violations, 'feedback_timeliness')
-            velocity_score = self._calculate_metric_score(person_violations, 'stage_velocity')
-            engagement_score = self._calculate_metric_score(person_violations, 'hm_engagement')
-            final_score = (feedback_score * self.WEIGHTS['feedback_timeliness'] +
-                          velocity_score * self.WEIGHTS['stage_velocity'] +
-                          engagement_score * self.WEIGHTS['hm_engagement'])
-            
-            scores.append({
-                'name': person, 'final_score': round(final_score, 1),
-                'feedback_score': round(feedback_score, 1), 'velocity_score': round(velocity_score, 1),
-                'engagement_score': round(engagement_score, 1), 'total_violations': len(person_violations),
-                'high_severity': len(person_violations[person_violations['severity'] == 'high']),
-                'medium_severity': len(person_violations[person_violations['severity'] == 'medium']),
-                'low_severity': len(person_violations[person_violations['severity'] == 'low'])
-            })
-        return pd.DataFrame(scores)
-    
-    def _calculate_metric_score(self, violations, metric):
-        metric_violations = violations[violations['metric'] == metric]
-        if len(metric_violations) == 0:
-            return 100.0
-        score = 100.0 + metric_violations['penalty'].sum()
-        return max(0.0, score)
+    .score-high {
+        color: #00cc00;
+        font-weight: bold;
+        font-size: 2em;
+    }
+    .score-medium {
+        color: #ff9900;
+        font-weight: bold;
+        font-size: 2em;
+    }
+    .score-low {
+        color: #cc0000;
+        font-weight: bold;
+        font-size: 2em;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# ==================== UTILITY FUNCTIONS ====================
-
-def get_status_indicator(score, high_severity_count=0):
-    """Return status color based on score and severity"""
-    if score >= 70 and high_severity_count == 0:
-        return "green"
-    elif score >= 50 or high_severity_count <= 2:
-        return "yellow"
+def get_score_color(score):
+    """Return color class based on score"""
+    if score >= 70:
+        return "score-high"
+    elif score >= 50:
+        return "score-medium"
     else:
-        return "red"
+        return "score-low"
 
-def render_status(status):
-    """Render status indicator"""
-    if status == "green":
-        st.markdown('<div class="status-indicator status-green"></div>', unsafe_allow_html=True)
-    elif status == "yellow":
-        st.markdown('<div class="status-indicator status-yellow"></div>', unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="status-indicator status-red"></div>', unsafe_allow_html=True)
-
-# ==================== DATA LOADING ====================
-
-@st.cache_data
 def load_data():
+    """Load and process data"""
     try:
         df = pd.read_csv('sample_ats_export.csv')
-        
         engine = ScorecardEngine(df)
         violations = engine.calculate_scores()
-        recruiter_scores = engine.score_by_person(violations, 'recruiter')
-        hm_scores = engine.score_by_person(violations, 'hm')
+        recruiter_scores = engine.score_by_recruiter(violations)
+        hm_scores = engine.score_by_hiring_manager(violations)
+        org_summary = engine.get_org_summary(recruiter_scores, hm_scores)
         
-        # Build team data with departments and roles
-        team_data = df.groupby(['recruiter_name', 'hiring_manager_name', 'team', 'job_title']).agg({
-            'requisition_id': 'nunique',
-            'candidate_id': 'count'
-        }).reset_index()
-        
-        team_data.columns = ['recruiter', 'hm', 'department', 'role', 'roles', 'candidates']
-        
-        team_data = team_data.merge(
-            recruiter_scores[['name', 'final_score', 'total_violations', 'high_severity']],
-            left_on='recruiter', right_on='name', how='left'
-        ).rename(columns={'final_score': 'recruiter_score', 'total_violations': 'recruiter_violations', 'high_severity': 'recruiter_high'})
-        
-        team_data = team_data.merge(
-            hm_scores[['name', 'final_score', 'total_violations', 'high_severity']],
-            left_on='hm', right_on='name', how='left'
-        ).rename(columns={'final_score': 'hm_score', 'total_violations': 'hm_violations', 'high_severity': 'hm_high'})
-        
-        team_data['team_score'] = (team_data['recruiter_score'] + team_data['hm_score']) / 2
-        team_data['total_violations'] = team_data['recruiter_violations'] + team_data['hm_violations']
-        team_data['total_high'] = team_data['recruiter_high'] + team_data['hm_high']
-        
-        # Add status
-        team_data['status'] = team_data.apply(
-            lambda row: get_status_indicator(row['team_score'], row['total_high']), axis=1
-        )
-        
-        team_data = team_data[['status', 'department', 'role', 'recruiter', 'hm', 'recruiter_score', 'hm_score', 
-                                'team_score', 'total_violations', 'total_high', 'roles', 'candidates']]
-        
-        return df, team_data, recruiter_scores, hm_scores, violations
-        
+        return {
+            'raw_data': df,
+            'violations': violations,
+            'recruiter_scores': recruiter_scores,
+            'hm_scores': hm_scores,
+            'org_summary': org_summary,
+            'engine': engine
+        }
     except FileNotFoundError:
-        st.error("❌ Please upload sample_ats_export.csv")
-        return None, None, None, None, None
+        return None
 
-def get_top_flags(violations, person_name, person_type='recruiter'):
-    if violations.empty:
-        return []
-    col_name = 'recruiter_name' if person_type == 'recruiter' else 'hiring_manager_name'
-    person_violations = violations[violations[col_name] == person_name]
-    if person_violations.empty:
-        return []
+def load_historical_data():
+    """Load historical performance data"""
+    try:
+        if os.path.exists('historical_performance_data.json'):
+            with open('historical_performance_data.json', 'r') as f:
+                return json.load(f)
+        return None
+    except Exception as e:
+        st.error(f"Error loading historical data: {e}")
+        return None
+
+def render_trends_dashboard():
+    """Render leadership view with historical trends and improvement metrics"""
+    st.header("📈 Trends & Progress (Leadership View)")
+    st.caption("Track team improvement over time and identify success stories")
     
-    severity_order = {'high': 0, 'medium': 1, 'low': 2}
-    person_violations['severity_rank'] = person_violations['severity'].map(severity_order)
-    sorted_violations = person_violations.sort_values(['severity_rank', 'penalty']).head(3)
+    # Load historical data
+    historical_data = load_historical_data()
     
-    flags = []
-    for _, viol in sorted_violations.iterrows():
-        emoji = "🔴" if viol['severity'] == 'high' else "🟡" if viol['severity'] == 'medium' else "🟢"
-        flags.append({'severity': emoji, 'issue': viol['description'], 'candidate': viol['candidate_id']})
-    return flags
-
-# ==================== UI COMPONENTS ====================
-
-def show_signin():
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        st.markdown("""
-            <div style='text-align: center; padding: 40px 0;'>
-                <h1 style='font-size: 4em; margin: 0; color: #1a365d;'>⭐</h1>
-                <h1 style='font-size: 3em; margin: 10px 0; font-weight: bold; color: #1a365d;'>Talent Score</h1>
-                <p style='font-size: 1.2em; color: #6b7280; margin-top: 10px;'>Performance tracking for recruiting teams</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Three clickable cards - using actual buttons styled as cards
-        col_a, col_b, col_c = st.columns(3)
-        
-        with col_a:
-            # Recruiter card (beige)
-            st.markdown("""
-                <div style='text-align: center; margin: 15px;'>
-                    <div style='background: linear-gradient(135deg, #f5f5dc 0%, #e8dcc4 100%);
-                                padding: 50px 30px; border-radius: 12px; border: 2px solid #d4a574;'>
-                        <div style='font-size: 3em; margin-bottom: 15px;'>👥</div>
-                        <div style='font-family: "Libre Baskerville", serif; font-size: 1.8em; 
-                                    font-weight: 700; color: #1a365d;'>Recruiter</div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            if st.button("Sign in as Recruiter", key="btn_recruiter", use_container_width=True):
-                st.session_state['role'] = 'recruiter'
-                st.rerun()
-        
-        with col_b:
-            # Hiring Team card (navy - swapped with leader)
-            st.markdown("""
-                <div style='text-align: center; margin: 15px;'>
-                    <div style='background: linear-gradient(135deg, #1a365d 0%, #2c5f9e 100%);
-                                padding: 50px 30px; border-radius: 12px; border: 2px solid #1a365d;'>
-                        <div style='font-size: 3em; margin-bottom: 15px;'>🎯</div>
-                        <div style='font-family: "Libre Baskerville", serif; font-size: 1.8em; 
-                                    font-weight: 700; color: #f5f5dc;'>Hiring Team</div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            if st.button("Sign in as Hiring Team", key="btn_hm", use_container_width=True):
-                st.session_state['role'] = 'hiring_team'
-                st.rerun()
-        
-        with col_c:
-            # Leader card (sand - swapped with hiring team)
-            st.markdown("""
-                <div style='text-align: center; margin: 15px;'>
-                    <div style='background: linear-gradient(135deg, #d4a574 0%, #c99a65 100%);
-                                padding: 50px 30px; border-radius: 12px; border: 2px solid #d4a574;'>
-                        <div style='font-size: 3em; margin-bottom: 15px;'>🏆</div>
-                        <div style='font-family: "Libre Baskerville", serif; font-size: 1.8em; 
-                                    font-weight: 700; color: #1a365d;'>Leader</div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            if st.button("Sign in as Leader", key="btn_leader", use_container_width=True):
-                st.session_state['role'] = 'leader'
-                st.rerun()
-
-def show_team_leaderboard(teams, df, violations):
-    st.header("🏆 Team Leaderboard")
+    if not historical_data:
+        st.warning("Historical data not available. Showing sample trend data.")
+        return
+    
+    snapshots = historical_data['snapshots']
+    
+    # Extract trend data
+    dates = [s['snapshot_date'] for s in snapshots]
+    org_scores = [s['org_summary']['org_average_score'] for s in snapshots]
+    rec_scores = [s['org_summary']['recruiter_average'] for s in snapshots]
+    hm_scores = [s['org_summary']['hm_average'] for s in snapshots]
+    high_violations = [s['org_summary']['high_severity_total'] for s in snapshots]
+    
+    # Calculate improvements
+    first_snapshot = snapshots[0]['org_summary']
+    last_snapshot = snapshots[-1]['org_summary']
+    
+    org_improvement = last_snapshot['org_average_score'] - first_snapshot['org_average_score']
+    rec_improvement = last_snapshot['recruiter_average'] - first_snapshot['recruiter_average']
+    hm_improvement = last_snapshot['hm_average'] - first_snapshot['hm_average']
+    violation_reduction = first_snapshot['high_severity_total'] - last_snapshot['high_severity_total']
+    
+    # Top-level summary metrics
+    st.subheader("🎯 3-Month Impact Summary")
     
     col1, col2, col3, col4 = st.columns(4)
+    
     with col1:
-        st.metric("Teams", len(teams))
+        st.metric(
+            "Organization Score",
+            f"{last_snapshot['org_average_score']}/100",
+            delta=f"+{org_improvement:.1f} pts",
+            delta_color="normal"
+        )
+        st.caption(f"Started at {first_snapshot['org_average_score']}")
+    
     with col2:
-        st.metric("Avg Score", f"{teams['team_score'].mean():.0f}/100")
+        st.metric(
+            "Recruiter Average",
+            f"{last_snapshot['recruiter_average']}/100",
+            delta=f"+{rec_improvement:.1f} pts",
+            delta_color="normal"
+        )
+    
     with col3:
-        best_team = teams.nlargest(1, 'team_score').iloc[0]
-        st.metric("Top Team", f"{best_team['department']} - {best_team['role'][:20]}...")
+        st.metric(
+            "Manager Average",
+            f"{last_snapshot['hm_average']}/100",
+            delta=f"+{hm_improvement:.1f} pts",
+            delta_color="normal"
+        )
+    
     with col4:
-        st.metric("Top Score", f"{teams['team_score'].max():.0f}/100")
+        st.metric(
+            "Critical Issues",
+            last_snapshot['high_severity_total'],
+            delta=f"-{violation_reduction}",
+            delta_color="inverse"
+        )
+        st.caption(f"Down from {first_snapshot['high_severity_total']}")
     
     st.markdown("---")
     
-    with st.expander("ℹ️ How Scoring Works"):
-        st.markdown("""
-        **Team Score = Average of Recruiter + HM Scores**
-        
-        **Status Indicators:**
-        - 🟢 Green: Score ≥70 with no critical issues
-        - 🟡 Yellow: Score 50-69 or few critical issues
-        - 🔴 Red: Score <50 or multiple critical issues
-        
-        **Metrics:** Feedback (40%) | Velocity (35%) | Engagement (25%)
-        """)
+    # Main trend charts
+    col1, col2 = st.columns(2)
     
-    st.markdown("---")
-    st.subheader("Rankings by Department & Role")
-    
-    # Group by department
-    sorted_teams = teams.sort_values(['department', 'team_score'], ascending=[True, False])
-    
-    current_dept = None
-    rank = 0
-    
-    for idx, row in sorted_teams.iterrows():
-        # New department header
-        if current_dept != row['department']:
-            current_dept = row['department']
-            rank = 0
-            st.markdown(f"<div class='department-header'>📁 {current_dept}</div>", unsafe_allow_html=True)
-        
-        rank += 1
-        
-        col1, col2, col3, col4, col5, col6 = st.columns([0.5, 0.5, 3, 1.5, 1.5, 1])
-        
-        with col1:
-            st.markdown(f"**#{rank}**")
-        
-        with col2:
-            render_status(row['status'])
-        
-        with col3:
-            st.markdown(f"**{row['role']}**")
-            with st.popover("👥 Team"):
-                st.write(f"**Recruiter:** {row['recruiter']}")
-                st.write(f"**Manager:** {row['hm']}")
-        
-        with col4:
-            st.markdown(f"**{row['team_score']:.0f}**/100")
-        
-        with col5:
-            st.caption(f"🚩 {row['total_violations']} issues")
-            st.caption(f"📋 {row['roles']} roles")
-        
-        with col6:
-            if st.button("View", key=f"team_{idx}"):
-                st.session_state['selected_team'] = idx
-        
-        # Details
-        if st.session_state.get('selected_team') == idx:
-            with st.expander("📊 Team Breakdown", expanded=True):
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.markdown(f"**👤 Recruiter: {row['recruiter']}**")
-                    st.write(f"Score: {row['recruiter_score']:.0f}/100")
-                    flags = get_top_flags(violations, row['recruiter'], 'recruiter')
-                    if flags:
-                        for flag in flags:
-                            st.markdown(f"{flag['severity']} {flag['issue']}")
-                    else:
-                        st.success("✅ No violations!")
-                
-                with col2:
-                    st.markdown(f"**🎯 Manager: {row['hm']}**")
-                    st.write(f"Score: {row['hm_score']:.0f}/100")
-                    flags = get_top_flags(violations, row['hm'], 'hm')
-                    if flags:
-                        for flag in flags:
-                            st.markdown(f"{flag['severity']} {flag['issue']}")
-                    else:
-                        st.success("✅ No violations!")
-        
-        st.markdown("---")
-
-def show_individual_view(people, teams, violations, person_type='recruiter'):
-    title = "👥 Recruiter Performance" if person_type == 'recruiter' else "🎯 Hiring Manager Performance"
-    st.header(title)
-    
-    for idx, row in people.sort_values('final_score', ascending=False).iterrows():
-        status = get_status_indicator(row['final_score'], row['high_severity'])
-        
-        col1, col2, col3, col4, col5 = st.columns([0.5, 3, 1, 1, 1])
-        
-        with col1:
-            render_status(status)
-        with col2:
-            st.write(f"**{row['name']}**")
-        with col3:
-            if st.button(f"🚩 {row['total_violations']}", key=f"{person_type}_{idx}"):
-                st.session_state[f"show_{person_type}_{idx}"] = not st.session_state.get(f"show_{person_type}_{idx}", False)
-        with col4:
-            st.write(f"**{row['final_score']:.0f}**/100")
-        with col5:
-            col_name = 'recruiter' if person_type == 'recruiter' else 'hm'
-            team_count = len(teams[teams[col_name] == row['name']])
-            st.caption(f"Teams: {team_count}")
-        
-        if st.session_state.get(f"show_{person_type}_{idx}", False):
-            flags = get_top_flags(violations, row['name'], person_type)
-            
-            with st.expander("⚠️ Details", expanded=True):
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Feedback", f"{row['feedback_score']:.0f}/100")
-                with col2:
-                    st.metric("Velocity", f"{row['velocity_score']:.0f}/100")
-                with col3:
-                    st.metric("Engagement", f"{row['engagement_score']:.0f}/100")
-                
-                st.markdown("---")
-                if flags:
-                    for flag in flags:
-                        st.markdown(f"{flag['severity']} **{flag['issue']}** - `{flag['candidate']}`")
-                else:
-                    st.success("✅ No violations!")
-        
-        st.markdown("---")
-
-# ==================== MAIN APP ====================
-
-def main():
-    apply_custom_css()
-    
-    if 'role' not in st.session_state:
-        st.session_state['role'] = None
-    
-    if st.session_state['role'] is None:
-        show_signin()
-        return
-    
-    df, teams, recruiters, hms, violations = load_data()
-    if df is None:
-        return
-    
-    col1, col2 = st.columns([4, 1])
     with col1:
-        st.title("⭐ Talent Score")
-    with col2:
-        if st.button("🚪 Sign Out"):
-            st.session_state['role'] = None
-            st.rerun()
+        st.subheader("Overall Performance Trend")
+        
+        fig = go.Figure()
+        
+        fig.add_trace(go.Scatter(
+            x=dates,
+            y=org_scores,
+            mode='lines+markers',
+            name='Organization',
+            line=dict(color='#4299e1', width=3),
+            marker=dict(size=10)
+        ))
+        
+        fig.add_trace(go.Scatter(
+            x=dates,
+            y=rec_scores,
+            mode='lines+markers',
+            name='Recruiters',
+            line=dict(color='#48bb78', width=2),
+            marker=dict(size=8)
+        ))
+        
+        fig.add_trace(go.Scatter(
+            x=dates,
+            y=hm_scores,
+            mode='lines+markers',
+            name='Hiring Managers',
+            line=dict(color='#ed8936', width=2),
+            marker=dict(size=8)
+        ))
+        
+        fig.update_layout(
+            xaxis_title="Date",
+            yaxis_title="Average Score",
+            yaxis=dict(range=[0, 100]),
+            hovermode='x unified',
+            height=400,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
     
-    st.caption(f"Signed in as: **{st.session_state['role'].replace('_', ' ').title()}**")
+    with col2:
+        st.subheader("Critical Issues Reduction")
+        
+        fig = go.Figure()
+        
+        fig.add_trace(go.Bar(
+            x=dates,
+            y=high_violations,
+            marker=dict(
+                color=high_violations,
+                colorscale='Reds_r',
+                showscale=False
+            ),
+            text=high_violations,
+            textposition='auto'
+        ))
+        
+        fig.update_layout(
+            xaxis_title="Date",
+            yaxis_title="Number of High Severity Issues",
+            height=400
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+    
     st.markdown("---")
     
-    role = st.session_state['role']
+    # Individual improvement tracking
+    st.subheader("⭐ Individual Performance Tracking")
     
-    if role == 'recruiter':
-        page = st.sidebar.radio("View", ["🏆 Team Leaderboard", "👥 My Performance"])
-        if page == "🏆 Team Leaderboard":
-            show_team_leaderboard(teams, df, violations)
-        else:
-            show_individual_view(recruiters, teams, violations, 'recruiter')
+    # Get all people from first and last snapshot
+    first_people_rec = {p['name']: p['final_score'] for p in snapshots[0]['recruiters']}
+    last_people_rec = {p['name']: p['final_score'] for p in snapshots[-1]['recruiters']}
     
-    elif role == 'hiring_team':
-        page = st.sidebar.radio("View", ["🏆 Team Leaderboard", "🎯 My Performance"])
-        if page == "🏆 Team Leaderboard":
-            show_team_leaderboard(teams, df, violations)
-        else:
-            show_individual_view(hms, teams, violations, 'hm')
+    first_people_hm = {p['name']: p['final_score'] for p in snapshots[0]['hiring_managers']}
+    last_people_hm = {p['name']: p['final_score'] for p in snapshots[-1]['hiring_managers']}
     
-    elif role == 'leader':
-        page = st.sidebar.radio("View", ["🏆 Team Leaderboard", "👥 Recruiters", "🎯 Hiring Managers"])
-        if page == "🏆 Team Leaderboard":
-            show_team_leaderboard(teams, df, violations)
-        elif page == "👥 Recruiters":
-            show_individual_view(recruiters, teams, violations, 'recruiter')
+    # Calculate improvements
+    rec_improvements = {name: last_people_rec[name] - first_people_rec[name] for name in first_people_rec}
+    hm_improvements = {name: last_people_hm[name] - first_people_hm[name] for name in first_people_hm}
+    
+    all_improvements = {**rec_improvements, **hm_improvements}
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### 🏆 Top 5 Most Improved")
+        top_improvers = sorted(all_improvements.items(), key=lambda x: x[1], reverse=True)[:5]
+        
+        for i, (name, improvement) in enumerate(top_improvers, 1):
+            if name in first_people_rec:
+                role = "Recruiter"
+                start_score = first_people_rec[name]
+                end_score = last_people_rec[name]
+            else:
+                role = "Hiring Manager"
+                start_score = first_people_hm[name]
+                end_score = last_people_hm[name]
+            
+            st.success(f"**{i}. {name}** ({role})")
+            st.caption(f"   {start_score:.1f} → {end_score:.1f} (+{improvement:.1f} points)")
+    
+    with col2:
+        st.markdown("#### ⚠️ Needs Additional Support")
+        bottom_improvers = sorted(all_improvements.items(), key=lambda x: x[1])[:5]
+        
+        for i, (name, improvement) in enumerate(bottom_improvers, 1):
+            if name in first_people_rec:
+                role = "Recruiter"
+                start_score = first_people_rec[name]
+                end_score = last_people_rec[name]
+            else:
+                role = "Hiring Manager"
+                start_score = first_people_hm[name]
+                end_score = last_people_hm[name]
+            
+            if improvement < 15:  # Less than expected improvement
+                st.warning(f"**{i}. {name}** ({role})")
+                st.caption(f"   {start_score:.1f} → {end_score:.1f} (+{improvement:.1f} points)")
+            else:
+                st.info(f"**{i}. {name}** ({role})")
+                st.caption(f"   {start_score:.1f} → {end_score:.1f} (+{improvement:.1f} points)")
+    
+    st.markdown("---")
+    
+    # Detailed person-by-person trends
+    st.subheader("📊 Individual Trend Lines")
+    
+    tab1, tab2 = st.tabs(["Recruiters", "Hiring Managers"])
+    
+    with tab1:
+        # Get all recruiter names
+        recruiter_names = list(first_people_rec.keys())
+        
+        # Create trend data for each recruiter
+        recruiter_trends = {}
+        for name in recruiter_names:
+            scores = [s['final_score'] for s in [p for snap in snapshots for p in snap['recruiters'] if p['name'] == name]]
+            recruiter_trends[name] = scores
+        
+        fig = go.Figure()
+        
+        for name, scores in recruiter_trends.items():
+            fig.add_trace(go.Scatter(
+                x=dates,
+                y=scores,
+                mode='lines+markers',
+                name=name,
+                line=dict(width=2),
+                marker=dict(size=6)
+            ))
+        
+        fig.update_layout(
+            xaxis_title="Date",
+            yaxis_title="Score",
+            yaxis=dict(range=[0, 100]),
+            hovermode='x unified',
+            height=500,
+            legend=dict(orientation="v", yanchor="top", y=1, xanchor="left", x=1.02)
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with tab2:
+        # Get all HM names
+        hm_names = list(first_people_hm.keys())
+        
+        # Create trend data for each HM
+        hm_trends = {}
+        for name in hm_names:
+            scores = [s['final_score'] for s in [p for snap in snapshots for p in snap['hiring_managers'] if p['name'] == name]]
+            hm_trends[name] = scores
+        
+        fig = go.Figure()
+        
+        for name, scores in hm_trends.items():
+            fig.add_trace(go.Scatter(
+                x=dates,
+                y=scores,
+                mode='lines+markers',
+                name=name,
+                line=dict(width=2),
+                marker=dict(size=6)
+            ))
+        
+        fig.update_layout(
+            xaxis_title="Date",
+            yaxis_title="Score",
+            yaxis=dict(range=[0, 100]),
+            hovermode='x unified',
+            height=500,
+            legend=dict(orientation="v", yanchor="top", y=1, xanchor="left", x=1.02)
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+    
+    st.markdown("---")
+    
+    # Key insights and recommendations
+    st.subheader("💡 Key Insights & Recommendations")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### ✅ What's Working")
+        st.success(f"**Overall improvement of +{org_improvement:.1f} points** in 3 months demonstrates the platform is driving behavioral change.")
+        st.success(f"**{violation_reduction} fewer critical issues** - team is becoming more responsive and following SLAs.")
+        
+        # Find best performer
+        best_name = max(all_improvements.items(), key=lambda x: x[1])[0]
+        best_improvement = all_improvements[best_name]
+        st.success(f"**{best_name}** is your star performer with +{best_improvement:.1f} point improvement. Consider having them share best practices.")
+    
+    with col2:
+        st.markdown("#### 🎯 Areas for Focus")
+        
+        # Find slowest improver
+        slowest_name = min(all_improvements.items(), key=lambda x: x[1])[0]
+        slowest_improvement = all_improvements[slowest_name]
+        
+        if slowest_improvement < 15:
+            st.warning(f"**{slowest_name}** needs additional coaching - only +{slowest_improvement:.1f} point improvement.")
+        
+        # Check if any group is lagging
+        if hm_improvement < rec_improvement:
+            st.warning("**Hiring Managers** improving slower than Recruiters - consider additional training on feedback timeliness.")
+        
+        st.info("**Recommendation:** Continue biweekly check-ins. Target org score of 75+ by next quarter.")
+
+def render_open_roles_dashboard(data):
+    """Render role-centric dashboard showing recruiter + HM partnerships"""
+    st.header("📋 Open Roles Dashboard")
+    
+    # Calculate role-level scores
+    raw_data = data['raw_data']
+    violations = data['violations']
+    recruiter_scores = data['recruiter_scores']
+    hm_scores = data['hm_scores']
+    
+    # Get unique requisitions
+    requisitions = []
+    for req_id in raw_data['requisition_id'].unique():
+        req_data = raw_data[raw_data['requisition_id'] == req_id].iloc[0]
+        
+        recruiter = req_data['recruiter_name']
+        hm = req_data['hiring_manager_name']
+        
+        # Get scores
+        rec_score = recruiter_scores[recruiter_scores['name'] == recruiter]['final_score'].iloc[0] if len(recruiter_scores[recruiter_scores['name'] == recruiter]) > 0 else 0
+        hm_score = hm_scores[hm_scores['name'] == hm]['final_score'].iloc[0] if len(hm_scores[hm_scores['name'] == hm]) > 0 else 0
+        
+        # Combined score (weighted average)
+        combined_score = (rec_score * 0.5 + hm_score * 0.5)
+        
+        # Get violations for this req
+        req_violations = violations[violations['requisition_id'] == req_id]
+        high_violations = len(req_violations[req_violations['severity'] == 'high'])
+        
+        # Calculate days open
+        role_opened = pd.to_datetime(req_data['role_opened_date'])
+        days_open = (datetime.now() - role_opened).days
+        
+        # Determine action items
+        action_items = []
+        if high_violations > 0:
+            action_items.append(f"{high_violations} critical issue{'s' if high_violations > 1 else ''}")
+        
+        feedback_violations = req_violations[req_violations['metric'] == 'feedback_timeliness']
+        if len(feedback_violations) > 0:
+            action_items.append("Feedback overdue")
+        
+        velocity_violations = req_violations[req_violations['metric'] == 'stage_velocity']
+        if len(velocity_violations[velocity_violations['severity'] == 'high']) > 0:
+            action_items.append("Stage delay")
+        
+        requisitions.append({
+            'req_id': req_id,
+            'job_title': req_data['job_title'],
+            'team': req_data['team'],
+            'recruiter': recruiter,
+            'rec_score': round(rec_score, 0),
+            'hiring_manager': hm,
+            'hm_score': round(hm_score, 0),
+            'combined_score': round(combined_score, 0),
+            'days_open': days_open,
+            'status': req_data['current_status'],
+            'action_items': ', '.join(action_items) if action_items else 'On track',
+            'high_violations': high_violations
+        })
+    
+    req_df = pd.DataFrame(requisitions)
+    
+    # Top metrics
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    
+    team_score = req_df['combined_score'].mean()
+    
+    with col1:
+        score_color = "🟢" if team_score >= 70 else "🟡" if team_score >= 50 else "🔴"
+        st.metric("Team Score", f"{score_color} {round(team_score, 0)}/100")
+    
+    with col2:
+        st.metric("Open Roles", len(req_df))
+    
+    with col3:
+        st.metric("Avg Recruiter Score", round(req_df['rec_score'].mean(), 0))
+    
+    with col4:
+        st.metric("Avg Manager Score", round(req_df['hm_score'].mean(), 0))
+    
+    with col5:
+        # Calculate avg feedback time from violations
+        feedback_vios = violations[violations['metric'] == 'feedback_timeliness']
+        if len(feedback_vios) > 0:
+            avg_feedback_hrs = feedback_vios['delay_hours'].mean()
+            st.metric("Avg Time to Feedback", f"{round(avg_feedback_hrs, 0)}hrs")
         else:
-            show_individual_view(hms, teams, violations, 'hm')
+            st.metric("Avg Time to Feedback", "N/A")
+    
+    with col6:
+        # Calculate avg stage time from violations
+        velocity_vios = violations[violations['metric'] == 'stage_velocity']
+        if len(velocity_vios) > 0:
+            avg_stage_days = velocity_vios['days_in_stage'].mean()
+            st.metric("Avg Stage Time", f"{round(avg_stage_days, 1)} days")
+        else:
+            st.metric("Avg Stage Time", "N/A")
+    
+    st.markdown("---")
+    
+    # Filters
+    col1, col2, col3 = st.columns([2, 2, 2])
+    
+    with col1:
+        team_filter = st.multiselect(
+            "Filter by Team",
+            options=['All'] + sorted(req_df['team'].unique().tolist()),
+            default=['All']
+        )
+    
+    with col2:
+        status_filter = st.selectbox(
+            "Filter by Status",
+            options=['All', 'Critical (Score < 50)', 'Needs Attention (50-70)', 'Good (70+)']
+        )
+    
+    with col3:
+        sort_by = st.selectbox(
+            "Sort by",
+            options=['Combined Score (Low to High)', 'Combined Score (High to Low)', 'Days Open', 'Critical Issues']
+        )
+    
+    # Apply filters
+    filtered_df = req_df.copy()
+    
+    if 'All' not in team_filter:
+        filtered_df = filtered_df[filtered_df['team'].isin(team_filter)]
+    
+    if status_filter == 'Critical (Score < 50)':
+        filtered_df = filtered_df[filtered_df['combined_score'] < 50]
+    elif status_filter == 'Needs Attention (50-70)':
+        filtered_df = filtered_df[(filtered_df['combined_score'] >= 50) & (filtered_df['combined_score'] < 70)]
+    elif status_filter == 'Good (70+)':
+        filtered_df = filtered_df[filtered_df['combined_score'] >= 70]
+    
+    # Apply sorting
+    if sort_by == 'Combined Score (Low to High)':
+        filtered_df = filtered_df.sort_values('combined_score', ascending=True)
+    elif sort_by == 'Combined Score (High to Low)':
+        filtered_df = filtered_df.sort_values('combined_score', ascending=False)
+    elif sort_by == 'Days Open':
+        filtered_df = filtered_df.sort_values('days_open', ascending=False)
+    elif sort_by == 'Critical Issues':
+        filtered_df = filtered_df.sort_values('high_violations', ascending=False)
+    
+    # Display table
+    st.subheader(f"Open Roles ({len(filtered_df)} roles)")
+    
+    # Format the dataframe for display
+    display_df = filtered_df[[
+        'job_title', 'team', 'recruiter', 'rec_score', 
+        'hiring_manager', 'hm_score', 'combined_score', 
+        'days_open', 'action_items'
+    ]].copy()
+    
+    display_df.columns = [
+        'Role', 'Department', 'Recruiter', 'Rec. Score',
+        'Hiring Manager', 'Mgr. Score', 'Combined Score',
+        'Open Since (days)', 'Action Items'
+    ]
+    
+    # Color code the scores
+    def color_score(val):
+        if isinstance(val, (int, float)):
+            if val >= 70:
+                return 'background-color: #d4edda; color: #155724; font-weight: bold'
+            elif val >= 50:
+                return 'background-color: #fff3cd; color: #856404; font-weight: bold'
+            else:
+                return 'background-color: #f8d7da; color: #721c24; font-weight: bold'
+        return ''
+    
+    styled_df = display_df.style.applymap(
+        color_score,
+        subset=['Rec. Score', 'Mgr. Score', 'Combined Score']
+    )
+    
+    st.dataframe(
+        styled_df,
+        use_container_width=True,
+        hide_index=True,
+        height=600
+    )
+    
+    # Key insights
+    st.markdown("---")
+    st.subheader("Key Insights")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### 🔴 Roles Needing Immediate Attention")
+        critical_roles = filtered_df[filtered_df['combined_score'] < 50].head(5)
+        if len(critical_roles) > 0:
+            for _, role in critical_roles.iterrows():
+                st.error(f"**{role['job_title']}** ({role['team']}) - Score: {role['combined_score']} - {role['action_items']}")
+        else:
+            st.success("No critical roles!")
+    
+    with col2:
+        st.markdown("#### ⭐ Best Performing Partnerships")
+        top_roles = filtered_df[filtered_df['combined_score'] >= 70].head(5)
+        if len(top_roles) > 0:
+            for _, role in top_roles.iterrows():
+                st.success(f"**{role['job_title']}** ({role['team']}) - Score: {role['combined_score']} - {role['recruiter']} + {role['hiring_manager']}")
+        else:
+            st.info("No roles scoring above 70 yet")
+
+def render_org_dashboard(data):
+    """Render organization-level scorecard"""
+    st.header("🏢 Organization Scorecard")
+    
+    summary = data['org_summary']
+    
+    # Top-level metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric(
+            "Organization Score", 
+            f"{summary['org_average_score']}/100",
+            delta=None
+        )
+    
+    with col2:
+        st.metric(
+            "Recruiter Average",
+            f"{summary['recruiter_average']}/100"
+        )
+    
+    with col3:
+        st.metric(
+            "Hiring Manager Average",
+            f"{summary['hm_average']}/100"
+        )
+    
+    with col4:
+        st.metric(
+            "High Severity Issues",
+            summary['high_severity_total'],
+            delta=None,
+            delta_color="inverse"
+        )
+    
+    st.markdown("---")
+    
+    # Team distribution
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Recruiter Performance Distribution")
+        recruiter_df = data['recruiter_scores'].sort_values('final_score', ascending=True)
+        
+        fig = go.Figure(go.Bar(
+            x=recruiter_df['final_score'],
+            y=recruiter_df['name'],
+            orientation='h',
+            marker=dict(
+                color=recruiter_df['final_score'],
+                colorscale='RdYlGn',
+                cmin=0,
+                cmax=100
+            ),
+            text=recruiter_df['final_score'],
+            textposition='auto',
+        ))
+        fig.update_layout(
+            xaxis_title="Score",
+            yaxis_title="",
+            height=400,
+            showlegend=False
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        st.subheader("Hiring Manager Performance Distribution")
+        hm_df = data['hm_scores'].sort_values('final_score', ascending=True)
+        
+        fig = go.Figure(go.Bar(
+            x=hm_df['final_score'],
+            y=hm_df['name'],
+            orientation='h',
+            marker=dict(
+                color=hm_df['final_score'],
+                colorscale='RdYlGn',
+                cmin=0,
+                cmax=100
+            ),
+            text=hm_df['final_score'],
+            textposition='auto',
+        ))
+        fig.update_layout(
+            xaxis_title="Score",
+            yaxis_title="",
+            height=400,
+            showlegend=False
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Violation breakdown
+    st.subheader("Violation Breakdown by Severity")
+    
+    severity_data = data['violations'].groupby(['severity', 'metric']).size().reset_index(name='count')
+    
+    fig = px.bar(
+        severity_data,
+        x='metric',
+        y='count',
+        color='severity',
+        barmode='group',
+        color_discrete_map={
+            'low': '#90EE90',
+            'medium': '#FFD700',
+            'high': '#FF6B6B'
+        },
+        labels={
+            'metric': 'Metric',
+            'count': 'Number of Violations',
+            'severity': 'Severity'
+        }
+    )
+    fig.update_layout(height=400)
+    st.plotly_chart(fig, use_container_width=True)
+
+def render_recruiter_cards(data):
+    """Render individual recruiter performance cards"""
+    st.header("👥 Recruiter Performance Cards")
+    
+    recruiter_scores = data['recruiter_scores'].sort_values('final_score', ascending=False)
+    violations = data['violations']
+    
+    # Filter selector
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        selected_recruiter = st.selectbox(
+            "Select Recruiter",
+            options=recruiter_scores['name'].tolist(),
+            index=0
+        )
+    
+    with col2:
+        st.write("")  # Spacing
+    
+    # Get recruiter data
+    recruiter_data = recruiter_scores[recruiter_scores['name'] == selected_recruiter].iloc[0]
+    recruiter_violations = violations[violations['recruiter_name'] == selected_recruiter]
+    
+    # Display card
+    st.markdown("---")
+    
+    # Score overview
+    col1, col2, col3, col4 = st.columns(4)
+    
+    score = recruiter_data['final_score']
+    score_class = get_score_color(score)
+    
+    with col1:
+        st.markdown(f"### Overall Score")
+        st.markdown(f'<p class="{score_class}">{score}/100</p>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("### Total Violations")
+        st.markdown(f"**{recruiter_data['total_violations']}**")
+        st.caption(f"🔴 {recruiter_data['high_severity']} High")
+    
+    with col3:
+        st.markdown("### Feedback Score")
+        st.markdown(f"**{recruiter_data['feedback_score']}/100**")
+        st.caption("40% weight")
+    
+    with col4:
+        st.markdown("### Velocity Score")
+        st.markdown(f"**{recruiter_data['velocity_score']}/100**")
+        st.caption("35% weight")
+    
+    # Metric breakdown
+    st.markdown("---")
+    st.subheader("Performance Breakdown")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### Metric Scores")
+        
+        metrics_data = pd.DataFrame({
+            'Metric': ['Interview Feedback', 'Stage Velocity', 'HM Engagement'],
+            'Score': [
+                recruiter_data['feedback_score'],
+                recruiter_data['velocity_score'],
+                recruiter_data['engagement_score']
+            ],
+            'Weight': ['40%', '35%', '25%']
+        })
+        
+        fig = go.Figure(go.Bar(
+            x=metrics_data['Metric'],
+            y=metrics_data['Score'],
+            marker=dict(
+                color=metrics_data['Score'],
+                colorscale='RdYlGn',
+                cmin=0,
+                cmax=100
+            ),
+            text=metrics_data['Score'],
+            textposition='auto',
+        ))
+        fig.update_layout(
+            yaxis_title="Score",
+            height=300,
+            showlegend=False
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        st.markdown("#### Violations by Severity")
+        
+        severity_data = recruiter_violations['severity'].value_counts().reset_index()
+        severity_data.columns = ['Severity', 'Count']
+        
+        fig = px.pie(
+            severity_data,
+            values='Count',
+            names='Severity',
+            color='Severity',
+            color_discrete_map={
+                'low': '#90EE90',
+                'medium': '#FFD700',
+                'high': '#FF6B6B'
+            },
+            hole=0.4
+        )
+        fig.update_layout(height=300)
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Detailed violations
+    st.markdown("---")
+    st.subheader("Recent Violations")
+    
+    # Show top violations
+    display_violations = recruiter_violations[
+        ['requisition_id', 'metric', 'severity', 'penalty', 'stage']
+    ].sort_values('penalty', ascending=True).head(10)
+    
+    display_violations['metric'] = display_violations['metric'].replace({
+        'feedback_timeliness': 'Feedback Timeliness',
+        'stage_velocity': 'Stage Velocity',
+        'hm_engagement': 'HM Engagement'
+    })
+    
+    st.dataframe(
+        display_violations,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            'requisition_id': 'Requisition',
+            'metric': 'Metric',
+            'severity': st.column_config.Column('Severity', width='small'),
+            'penalty': st.column_config.Column('Penalty Points', width='small'),
+            'stage': 'Stage'
+        }
+    )
+
+def render_hm_cards(data):
+    """Render individual hiring manager performance cards"""
+    st.header("🎯 Hiring Manager Performance Cards")
+    
+    hm_scores = data['hm_scores'].sort_values('final_score', ascending=False)
+    violations = data['violations']
+    
+    # Filter selector
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        selected_hm = st.selectbox(
+            "Select Hiring Manager",
+            options=hm_scores['name'].tolist(),
+            index=0
+        )
+    
+    with col2:
+        st.write("")  # Spacing
+    
+    # Get HM data
+    hm_data = hm_scores[hm_scores['name'] == selected_hm].iloc[0]
+    hm_violations = violations[violations['hiring_manager_name'] == selected_hm]
+    
+    # Display card
+    st.markdown("---")
+    
+    # Score overview
+    col1, col2, col3, col4 = st.columns(4)
+    
+    score = hm_data['final_score']
+    score_class = get_score_color(score)
+    
+    with col1:
+        st.markdown(f"### Overall Score")
+        st.markdown(f'<p class="{score_class}">{score}/100</p>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("### Total Violations")
+        st.markdown(f"**{hm_data['total_violations']}**")
+        st.caption(f"🔴 {hm_data['high_severity']} High")
+    
+    with col3:
+        st.markdown("### Feedback Score")
+        st.markdown(f"**{hm_data['feedback_score']}/100**")
+        st.caption("40% weight")
+    
+    with col4:
+        st.markdown("### Engagement Score")
+        st.markdown(f"**{hm_data['engagement_score']}/100**")
+        st.caption("25% weight")
+    
+    # Metric breakdown
+    st.markdown("---")
+    st.subheader("Performance Breakdown")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### Metric Scores")
+        
+        metrics_data = pd.DataFrame({
+            'Metric': ['Interview Feedback', 'Stage Velocity', 'HM Engagement'],
+            'Score': [
+                hm_data['feedback_score'],
+                hm_data['velocity_score'],
+                hm_data['engagement_score']
+            ],
+            'Weight': ['40%', '35%', '25%']
+        })
+        
+        fig = go.Figure(go.Bar(
+            x=metrics_data['Metric'],
+            y=metrics_data['Score'],
+            marker=dict(
+                color=metrics_data['Score'],
+                colorscale='RdYlGn',
+                cmin=0,
+                cmax=100
+            ),
+            text=metrics_data['Score'],
+            textposition='auto',
+        ))
+        fig.update_layout(
+            yaxis_title="Score",
+            height=300,
+            showlegend=False
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        st.markdown("#### Violations by Severity")
+        
+        severity_data = hm_violations['severity'].value_counts().reset_index()
+        severity_data.columns = ['Severity', 'Count']
+        
+        fig = px.pie(
+            severity_data,
+            values='Count',
+            names='Severity',
+            color='Severity',
+            color_discrete_map={
+                'low': '#90EE90',
+                'medium': '#FFD700',
+                'high': '#FF6B6B'
+            },
+            hole=0.4
+        )
+        fig.update_layout(height=300)
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Engagement metrics specific to HMs
+    st.markdown("---")
+    st.subheader("Engagement Metrics")
+    
+    engagement_violations = hm_violations[hm_violations['metric'] == 'hm_engagement']
+    
+    if len(engagement_violations) > 0:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            missing_feedback = engagement_violations['missing_feedback_count'].sum()
+            st.metric("Missing Interview Feedback", int(missing_feedback))
+        
+        with col2:
+            delayed_feedback = engagement_violations['delayed_feedback_count'].sum()
+            st.metric("Delayed Feedback (>72hrs)", int(delayed_feedback))
+    else:
+        st.success("✅ Excellent engagement - no violations!")
+    
+    # Detailed violations
+    st.markdown("---")
+    st.subheader("Recent Violations")
+    
+    display_violations = hm_violations[
+        ['requisition_id', 'metric', 'severity', 'penalty', 'stage']
+    ].sort_values('penalty', ascending=True).head(10)
+    
+    display_violations['metric'] = display_violations['metric'].replace({
+        'feedback_timeliness': 'Feedback Timeliness',
+        'stage_velocity': 'Stage Velocity',
+        'hm_engagement': 'HM Engagement'
+    })
+    
+    st.dataframe(
+        display_violations,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            'requisition_id': 'Requisition',
+            'metric': 'Metric',
+            'severity': st.column_config.Column('Severity', width='small'),
+            'penalty': st.column_config.Column('Penalty Points', width='small'),
+            'stage': 'Stage'
+        }
+    )
+
+# Main app
+def main():
+    # Title
+    st.title("📊 Recruiter Scorecard Dashboard")
+    st.caption("Performance tracking based on SLA violations across key hiring metrics")
+    
+    # Load data
+    data = load_data()
+    
+    if data is None:
+        st.error("Please generate sample data first by running: `python generate_sample_data.py`")
+        return
+    
+    # Sidebar navigation
+    st.sidebar.title("Navigation")
+    page = st.sidebar.radio(
+        "Select View",
+        ["Open Roles Dashboard", "Trends & Progress (Leadership)", "Organization Overview", "Recruiter Cards", "Hiring Manager Cards"]
+    )
+    
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### Data Summary")
+    st.sidebar.metric("Total Recruiters", len(data['recruiter_scores']))
+    st.sidebar.metric("Total Hiring Managers", len(data['hm_scores']))
+    st.sidebar.metric("Total Violations", len(data['violations']))
+    
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### About This Demo")
+    st.sidebar.info("""
+    This dashboard tracks recruiter and hiring manager performance across three key metrics:
+    
+    1. **Interview Feedback Timeliness** (40%)
+    2. **Stage Progression Velocity** (35%)
+    3. **Hiring Manager Engagement** (25%)
+    
+    Scores start at 100 and decrease based on SLA violations.
+    """)
+    
+    # Render selected page
+    if page == "Open Roles Dashboard":
+        render_open_roles_dashboard(data)
+    elif page == "Trends & Progress (Leadership)":
+        render_trends_dashboard()
+    elif page == "Organization Overview":
+        render_org_dashboard(data)
+    elif page == "Recruiter Cards":
+        render_recruiter_cards(data)
+    elif page == "Hiring Manager Cards":
+        render_hm_cards(data)
 
 if __name__ == "__main__":
     main()
-    
