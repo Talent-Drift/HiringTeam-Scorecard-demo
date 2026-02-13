@@ -1,0 +1,61 @@
+requisition_id,job_title,team,recruiter_name,hiring_manager_name,role_opened_date,current_status,stage,stage_entered_date,interview_completed_date,feedback_submitted_date,interviewer_name,is_hiring_manager_interview
+REQ-2025-1000,Operations Manager,Operations,Jordan Kim,Taylor Brooks,2025-01-15,Technical Interview,Technical Interview,2025-01-16 00:00:00,,,Jordan Kim,False
+REQ-2025-1001,DevOps Engineer,Engineering,Sarah Chen,Rachel Green,2025-01-21,Offer,Offer,2025-01-27 00:00:00,,,Sarah Chen,False
+REQ-2025-1002,Marketing Analyst,Marketing,Amanda Taylor,Robert Smith,2024-12-05,Phone Screen,Phone Screen,2025-01-15 00:00:00,,,Amanda Taylor,False
+REQ-2025-1003,Operations Coordinator,Operations,Jordan Kim,Morgan Hayes,2024-11-01,Hired,Hired,2025-02-02 00:00:00,,,Jordan Kim,False
+REQ-2025-1004,Sales Development Rep,Sales,David Park,Mark Watson,2024-11-29,Phone Screen,Phone Screen,2024-12-02 00:00:00,,,David Park,False
+REQ-2025-1005,Brand Designer,Marketing,Amanda Taylor,Emily Davis,2024-12-30,Phone Screen,Phone Screen,2025-01-04 00:00:00,,,Amanda Taylor,False
+REQ-2025-1006,Customer Success Manager,Customer Success,Alex Morgan,Maria Garcia,2024-12-24,Final Interview,Final Interview,2025-01-30 00:00:00,,,Alex Morgan,False
+REQ-2025-1007,Support Engineer,Customer Success,Alex Morgan,Maria Garcia,2024-12-18,Phone Screen,Phone Screen,2025-01-16 00:00:00,,,Alex Morgan,False
+REQ-2025-1008,Regional Sales Director,Sales,David Park,Jennifer Lopez,2024-11-27,Final Interview,Final Interview,2024-12-24 00:00:00,,,David Park,False
+REQ-2025-1009,Backend Engineer,Engineering,Sarah Chen,Tom Brady,2024-11-21,Offer,Offer,2024-12-05 00:00:00,,,Sarah Chen,False
+REQ-2025-1010,Product Manager,Product,Lisa Anderson,Priya Patel,2025-01-16,Technical Interview,Technical Interview,2025-02-09 00:00:00,,,Lisa Anderson,False
+REQ-2025-1011,Implementation Specialist,Customer Success,Alex Morgan,Kevin Lee,2024-12-30,Technical Interview,Technical Interview,2025-02-12 00:00:00,,,Alex Morgan,False
+REQ-2025-1012,CSM Lead,Customer Success,Alex Morgan,Kevin Lee,2024-12-22,Phone Screen,Phone Screen,2025-02-02 00:00:00,,,Alex Morgan,False
+REQ-2025-1013,Principal Product Manager,Product,Lisa Anderson,Priya Patel,2025-01-02,Final Interview,Final Interview,2025-01-20 00:00:00,,,Lisa Anderson,False
+REQ-2025-1014,Operations Coordinator,Operations,Jordan Kim,Morgan Hayes,2024-11-22,Offer,Offer,2024-12-09 00:00:00,,,Jordan Kim,False
+REQ-2025-1015,Business Analyst,Operations,Jordan Kim,Taylor Brooks,2024-12-31,Final Interview,Final Interview,2025-02-06 00:00:00,,,Jordan Kim,False
+REQ-2025-1016,Content Marketing Manager,Marketing,Chris Johnson,Robert Smith,2024-12-26,Hired,Hired,2025-02-05 00:00:00,,,Chris Johnson,False
+REQ-2025-1017,DevOps Engineer,Engineering,Sarah Chen,Alex Kumar,2024-11-03,Phone Screen,Phone Screen,2024-12-02 00:00:00,,,Sarah Chen,False
+REQ-2025-1018,Account Executive,Sales,David Park,Jennifer Lopez,2025-01-10,Phone Screen,Phone Screen,2025-01-19 00:00:00,,,David Park,False
+REQ-2025-1019,Enterprise AE,Sales,David Park,Jennifer Lopez,2024-12-28,Final Interview,Final Interview,2025-01-28 00:00:00,,,David Park,False
+REQ-2025-1020,Business Analyst,Operations,Jordan Kim,Morgan Hayes,2024-12-31,Technical Interview,Technical Interview,2025-01-29 00:00:00,,,Jordan Kim,False
+REQ-2025-1021,Content Marketing Manager,Marketing,Chris Johnson,Robert Smith,2024-11-25,Technical Interview,Technical Interview,2025-02-13 00:00:00,,,Chris Johnson,False
+REQ-2025-1022,Product Manager,Product,Lisa Anderson,Priya Patel,2024-12-07,Final Interview,Final Interview,2025-02-08 00:00:00,,,Lisa Anderson,False
+REQ-2025-1023,Product Analyst,Product,Lisa Anderson,Priya Patel,2025-01-08,Technical Interview,Technical Interview,2025-01-29 00:00:00,,,Lisa Anderson,False
+REQ-2025-1024,Associate PM,Product,Lisa Anderson,Priya Patel,2024-12-15,Hired,Hired,2025-01-04 00:00:00,,,Lisa Anderson,False
+REQ-2025-1025,Content Marketing Manager,Marketing,Amanda Taylor,Emily Davis,2025-01-20,Final Interview,Final Interview,2025-01-30 00:00:00,,,Amanda Taylor,False
+REQ-2025-1026,Backend Engineer,Engineering,Mike Rodriguez,Tom Brady,2025-01-03,Phone Screen,Phone Screen,2025-01-19 00:00:00,,,Mike Rodriguez,False
+REQ-2025-1027,Engineering Manager,Engineering,Mike Rodriguez,Alex Kumar,2025-01-22,Technical Interview,Technical Interview,2025-02-04 00:00:00,,,Mike Rodriguez,False
+REQ-2025-1028,Support Engineer,Customer Success,Alex Morgan,Maria Garcia,2025-01-09,Phone Screen,Phone Screen,2025-01-21 00:00:00,,,Alex Morgan,False
+REQ-2025-1029,Associate PM,Product,Lisa Anderson,Priya Patel,2024-11-10,Offer,Offer,2024-12-22 00:00:00,,,Lisa Anderson,False
+REQ-2025-1030,Associate PM,Product,Lisa Anderson,James Wilson,2024-11-09,Phone Screen,Phone Screen,2024-11-20 00:00:00,,,Lisa Anderson,False
+REQ-2025-1031,Content Marketing Manager,Marketing,Chris Johnson,Robert Smith,2024-11-12,Final Interview,Final Interview,2024-12-10 00:00:00,,,Chris Johnson,False
+REQ-2025-1032,DevOps Engineer,Engineering,Mike Rodriguez,Tom Brady,2025-01-16,Phone Screen,Phone Screen,2025-01-23 00:00:00,,,Mike Rodriguez,False
+REQ-2025-1033,Implementation Specialist,Customer Success,Alex Morgan,Kevin Lee,2024-11-22,Offer,Offer,2025-02-10 00:00:00,,,Alex Morgan,False
+REQ-2025-1034,Brand Designer,Marketing,Amanda Taylor,Emily Davis,2025-01-22,Offer,Offer,2025-01-30 00:00:00,,,Amanda Taylor,False
+REQ-2025-1035,Senior Software Engineer,Engineering,Mike Rodriguez,Alex Kumar,2024-12-02,Final Interview,Final Interview,2025-01-28 00:00:00,,,Mike Rodriguez,False
+REQ-2025-1036,Business Analyst,Operations,Jordan Kim,Morgan Hayes,2024-12-15,Technical Interview,Technical Interview,2025-01-26 00:00:00,,,Jordan Kim,False
+REQ-2025-1037,Support Engineer,Customer Success,Alex Morgan,Kevin Lee,2024-11-24,Offer,Offer,2025-02-12 00:00:00,,,Alex Morgan,False
+REQ-2025-1038,Senior Product Designer,Product,Lisa Anderson,James Wilson,2024-12-03,Phone Screen,Phone Screen,2025-02-03 00:00:00,,,Lisa Anderson,False
+REQ-2025-1039,Enterprise AE,Sales,David Park,Jennifer Lopez,2025-01-21,Offer,Offer,2025-02-05 00:00:00,,,David Park,False
+REQ-2025-1040,Frontend Developer,Engineering,Mike Rodriguez,Tom Brady,2024-11-09,Final Interview,Final Interview,2025-01-07 00:00:00,,,Mike Rodriguez,False
+REQ-2025-1041,Operations Coordinator,Operations,Jordan Kim,Morgan Hayes,2024-11-06,Final Interview,Final Interview,2024-12-22 00:00:00,,,Jordan Kim,False
+REQ-2025-1042,Product Marketing Manager,Marketing,Chris Johnson,Emily Davis,2024-11-16,Phone Screen,Phone Screen,2024-12-20 00:00:00,,,Chris Johnson,False
+REQ-2025-1043,Engineering Manager,Engineering,Mike Rodriguez,Rachel Green,2024-11-10,Phone Screen,Phone Screen,2024-12-21 00:00:00,,,Mike Rodriguez,False
+REQ-2025-1044,Brand Designer,Marketing,Chris Johnson,Emily Davis,2025-01-18,Technical Interview,Technical Interview,2025-02-04 00:00:00,,,Chris Johnson,False
+REQ-2025-1045,Principal Product Manager,Product,Lisa Anderson,James Wilson,2024-12-24,Phone Screen,Phone Screen,2025-01-04 00:00:00,,,Lisa Anderson,False
+REQ-2025-1046,Support Engineer,Customer Success,Alex Morgan,Maria Garcia,2024-11-26,Final Interview,Final Interview,2025-01-17 00:00:00,,,Alex Morgan,False
+REQ-2025-1047,Support Engineer,Customer Success,Alex Morgan,Maria Garcia,2024-12-02,Phone Screen,Phone Screen,2024-12-17 00:00:00,,,Alex Morgan,False
+REQ-2025-1048,Brand Designer,Marketing,Chris Johnson,Emily Davis,2024-11-27,Final Interview,Final Interview,2025-01-29 00:00:00,,,Chris Johnson,False
+REQ-2025-1049,Enterprise AE,Sales,Jessica Williams,Jennifer Lopez,2024-12-13,Final Interview,Final Interview,2024-12-20 00:00:00,,,Jessica Williams,False
+REQ-2025-1050,Senior Product Designer,Product,Lisa Anderson,Priya Patel,2024-12-29,Final Interview,Final Interview,2025-02-13 00:00:00,,,Lisa Anderson,False
+REQ-2025-1051,Content Marketing Manager,Marketing,Chris Johnson,Robert Smith,2024-11-16,Technical Interview,Technical Interview,2024-12-07 00:00:00,,,Chris Johnson,False
+REQ-2025-1052,CSM Lead,Customer Success,Alex Morgan,Maria Garcia,2024-11-12,Offer,Offer,2025-01-09 00:00:00,,,Alex Morgan,False
+REQ-2025-1053,Senior Software Engineer,Engineering,Sarah Chen,Rachel Green,2024-12-07,Technical Interview,Technical Interview,2024-12-25 00:00:00,,,Sarah Chen,False
+REQ-2025-1054,Enterprise AE,Sales,Jessica Williams,Jennifer Lopez,2024-11-30,Phone Screen,Phone Screen,2025-01-14 00:00:00,,,Jessica Williams,False
+REQ-2025-1055,Enterprise AE,Sales,Jessica Williams,Mark Watson,2024-12-24,Final Interview,Final Interview,2025-01-02 00:00:00,,,Jessica Williams,False
+REQ-2025-1056,Operations Coordinator,Operations,Jordan Kim,Morgan Hayes,2024-12-11,Hired,Hired,2025-01-28 00:00:00,,,Jordan Kim,False
+REQ-2025-1057,Staff Engineer,Engineering,Sarah Chen,Tom Brady,2024-11-20,Phone Screen,Phone Screen,2025-01-24 00:00:00,,,Sarah Chen,False
+REQ-2025-1058,Growth Marketing Lead,Marketing,Chris Johnson,Robert Smith,2024-12-09,Final Interview,Final Interview,2024-12-20 00:00:00,,,Chris Johnson,False
+REQ-2025-1059,Sales Development Rep,Sales,David Park,Jennifer Lopez,2024-11-11,Technical Interview,Technical Interview,2024-12-26 00:00:00,,,David Park,False
