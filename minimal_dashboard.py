@@ -1,59 +1,27 @@
 """
-Team Scorecard Dashboard - With Role-Based Sign-In
+Advanced Team Scorecard Dashboard
+With SLA-based scoring, role-based sign-in, and team competition
 """
 
 import streamlit as st
 import pandas as pd
-import random
+from datetime import datetime
+from advanced_scoring_engine import ScorecardEngine
 
 # Page config
 st.set_page_config(page_title="Talent Score", page_icon="🏆", layout="wide")
 
-# Simple scoring function
-def calculate_score(violations):
-    """Start at 100, subtract penalties"""
-    return max(0, 100 - (violations * 5))
-
-# Generate flags for each person's issues
-def generate_flags(person_data, num_issues):
-    """Generate top 3 issue flags with severity"""
-    flags = []
-    
-    flag_types = [
-        ("Feedback delayed >72hrs", "🔴"),
-        ("Stage stuck >7 days", "🔴"),
-        ("Missing interview feedback", "🟡"),
-        ("Slow candidate response", "🟡"),
-        ("Scheduling conflicts", "🟢"),
-        ("Profile incomplete", "🟢"),
-    ]
-    
-    for i in range(min(3, num_issues)):
-        flag = random.choice(flag_types)
-        candidate = person_data['candidate_id'].iloc[min(i, len(person_data)-1)]
-        flags.append({
-            'severity': flag[1],
-            'issue': flag[0],
-            'candidate': candidate
-        })
-    
-    severity_order = {'🔴': 0, '🟡': 1, '🟢': 2}
-    flags.sort(key=lambda x: severity_order[x['severity']])
-    
-    return flags
-
-# Load data and calculate team scores
+# Load data and calculate scores using advanced engine
 @st.cache_data
 def load_data():
     try:
         df = pd.read_csv('sample_ats_export.csv')
         
-        # Calculate individual scores first
-        recruiter_violations = df.groupby('recruiter_name').size().reset_index(name='violations')
-        recruiter_violations['score'] = recruiter_violations['violations'].apply(calculate_score)
-        
-        hm_violations = df.groupby('hiring_manager_name').size().reset_index(name='violations')
-        hm_violations['score'] = hm_violations['violations'].apply(calculate_score)
+        # Initialize scoring engine
+        engine = ScorecardEngine(df)
+        violations = engine.calculate_scores()
+        recruiter_scores = engine.score_by_recruiter(violations)
+        hm_scores = engine.score_by_hiring_manager(violations)
         
         # Calculate TEAM scores (recruiter + HM pairs)
         team_data = df.groupby(['recruiter_name', 'hiring_manager_name']).agg({
@@ -65,18 +33,18 @@ def load_data():
         
         # Add individual scores to teams
         team_data = team_data.merge(
-            recruiter_violations[['recruiter_name', 'score', 'violations']],
+            recruiter_scores[['name', 'final_score', 'total_violations']],
             left_on='recruiter',
-            right_on='recruiter_name',
+            right_on='name',
             how='left'
-        ).rename(columns={'score': 'recruiter_score', 'violations': 'recruiter_violations'})
+        ).rename(columns={'final_score': 'recruiter_score', 'total_violations': 'recruiter_violations'})
         
         team_data = team_data.merge(
-            hm_violations[['hiring_manager_name', 'score', 'violations']],
+            hm_scores[['name', 'final_score', 'total_violations']],
             left_on='hm',
-            right_on='hiring_manager_name',
+            right_on='name',
             how='left'
-        ).rename(columns={'score': 'hm_score', 'violations': 'hm_violations'})
+        ).rename(columns={'final_score': 'hm_score', 'total_violations': 'hm_violations'})
         
         # Calculate team score (average of recruiter + HM)
         team_data['team_score'] = (team_data['recruiter_score'] + team_data['hm_score']) / 2
@@ -89,17 +57,46 @@ def load_data():
         team_data = team_data[['team_name', 'recruiter', 'hm', 'recruiter_score', 'hm_score', 
                                 'team_score', 'total_violations', 'roles', 'candidates']]
         
-        return df, team_data, recruiter_violations, hm_violations
+        return df, team_data, recruiter_scores, hm_scores, violations
         
     except FileNotFoundError:
         st.error("❌ Please upload sample_ats_export.csv")
-        return None, None, None, None
+        return None, None, None, None, None
+
+# Get top flags from violations
+def get_top_flags(violations, person_name, person_type='recruiter'):
+    """Get top 3 violations for a person, sorted by severity"""
+    if violations.empty:
+        return []
+    
+    if person_type == 'recruiter':
+        person_violations = violations[violations['recruiter_name'] == person_name]
+    else:
+        person_violations = violations[violations['hiring_manager_name'] == person_name]
+    
+    if person_violations.empty:
+        return []
+    
+    # Sort by severity (high > medium > low) then by penalty
+    severity_order = {'high': 0, 'medium': 1, 'low': 2}
+    person_violations['severity_rank'] = person_violations['severity'].map(severity_order)
+    sorted_violations = person_violations.sort_values(['severity_rank', 'penalty']).head(3)
+    
+    flags = []
+    for _, viol in sorted_violations.iterrows():
+        emoji = "🔴" if viol['severity'] == 'high' else "🟡" if viol['severity'] == 'medium' else "🟢"
+        flags.append({
+            'severity': emoji,
+            'issue': viol['description'],
+            'candidate': viol['candidate_id'],
+            'metric': viol['metric']
+        })
+    
+    return flags
 
 # Sign-in page
 def show_signin():
     """Display sign-in page with role selection"""
-    
-    # Center content
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
@@ -176,11 +173,11 @@ def show_signin():
                 st.rerun()
         
         st.markdown("<br><br>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #999; font-size: 0.9em;'>© 2026 Talent Score. Demo version.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #999; font-size: 0.9em;'>© 2026 Talent Score. Powered by SLA-based scoring.</p>", unsafe_allow_html=True)
 
 # Team Leaderboard Page
-def show_team_leaderboard(teams, df):
-    """Show team rankings"""
+def show_team_leaderboard(teams, df, violations):
+    """Show team rankings with advanced metrics"""
     st.header("🏆 Team Leaderboard")
     
     # Top metrics
@@ -199,6 +196,26 @@ def show_team_leaderboard(teams, df):
     with col4:
         top_score = teams.nlargest(1, 'team_score')['team_score'].iloc[0]
         st.metric("Top Score", f"{top_score:.0f}/100")
+    
+    st.markdown("---")
+    
+    # Scoring methodology info
+    with st.expander("ℹ️ How Scoring Works"):
+        st.markdown("""
+        **Team Score = Average of Recruiter + Hiring Manager Scores**
+        
+        Individual scores start at 100 and are reduced based on SLA violations:
+        
+        **Weighted Metrics:**
+        - 🕐 Interview Feedback Timeliness (40%)
+        - ⚡ Stage Progression Velocity (35%)
+        - 🤝 Hiring Manager Engagement (25%)
+        
+        **Severity Levels:**
+        - 🔴 High: -10 to -15 points
+        - 🟡 Medium: -5 to -7 points
+        - 🟢 Low: -2 to -3 points
+        """)
     
     st.markdown("---")
     
@@ -258,25 +275,29 @@ def show_team_leaderboard(teams, df):
                     st.markdown(f"**👤 Recruiter: {row['recruiter']}**")
                     st.write(f"Score: {row['recruiter_score']:.0f}/100")
                     
-                    rec_data = df[df['recruiter_name'] == row['recruiter']]
-                    rec_flags = generate_flags(rec_data, int(row['recruiter_violations']))
+                    # Show recruiter flags
+                    rec_flags = get_top_flags(violations, row['recruiter'], 'recruiter')
                     
                     if rec_flags:
                         st.markdown("**Top Issues:**")
                         for flag in rec_flags:
                             st.markdown(f"{flag['severity']} {flag['issue']}")
+                    else:
+                        st.success("✅ No violations - excellent performance!")
                 
                 with col2:
                     st.markdown(f"**🎯 Hiring Manager: {row['hm']}**")
                     st.write(f"Score: {row['hm_score']:.0f}/100")
                     
-                    hm_data = df[df['hiring_manager_name'] == row['hm']]
-                    hm_flags = generate_flags(hm_data, int(row['hm_violations']))
+                    # Show HM flags
+                    hm_flags = get_top_flags(violations, row['hm'], 'hm')
                     
                     if hm_flags:
                         st.markdown("**Top Issues:**")
                         for flag in hm_flags:
                             st.markdown(f"{flag['severity']} {flag['issue']}")
+                    else:
+                        st.success("✅ No violations - excellent performance!")
                 
                 st.markdown("---")
                 st.write(f"**Team Stats:** {row['candidates']} candidates across {row['roles']} open roles")
@@ -289,67 +310,93 @@ def show_team_leaderboard(teams, df):
     st.bar_chart(chart_data)
 
 # Individual performance pages
-def show_recruiter_view(recruiters, teams, df):
-    """Show recruiter performance"""
+def show_recruiter_view(recruiters, teams, df, violations):
+    """Show recruiter performance with detailed metrics"""
     st.header("👥 Recruiter Performance")
     
-    for idx, row in recruiters.sort_values('score', ascending=False).iterrows():
+    for idx, row in recruiters.sort_values('final_score', ascending=False).iterrows():
         col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
         
         with col1:
-            st.write(f"**{row['recruiter_name']}**")
+            st.write(f"**{row['name']}**")
         
         with col2:
-            if st.button(f"🚩 {row['violations']} issues", key=f"rec_{idx}"):
+            if st.button(f"🚩 {row['total_violations']} issues", key=f"rec_{idx}"):
                 st.session_state[f"show_rec_{idx}"] = not st.session_state.get(f"show_rec_{idx}", False)
         
         with col3:
-            score_color = "🟢" if row['score'] >= 70 else "🟡" if row['score'] >= 50 else "🔴"
-            st.write(f"{score_color} {row['score']:.0f}/100")
+            score_color = "🟢" if row['final_score'] >= 70 else "🟡" if row['final_score'] >= 50 else "🔴"
+            st.write(f"{score_color} {row['final_score']:.0f}/100")
         
         with col4:
-            rec_teams = teams[teams['recruiter'] == row['recruiter_name']]['team_name'].tolist()
+            rec_teams = teams[teams['recruiter'] == row['name']]['team_name'].tolist()
             st.caption(f"Teams: {len(rec_teams)}")
         
         if st.session_state.get(f"show_rec_{idx}", False):
-            person_data = df[df['recruiter_name'] == row['recruiter_name']]
-            flags = generate_flags(person_data, row['violations'])
+            flags = get_top_flags(violations, row['name'], 'recruiter')
             
-            with st.expander("⚠️ Top Issues", expanded=True):
-                for flag in flags:
-                    st.markdown(f"{flag['severity']} **{flag['issue']}** - Candidate: `{flag['candidate']}`")
+            with st.expander("⚠️ Top Issues & Metrics", expanded=True):
+                # Show metric breakdown
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Feedback Score", f"{row['feedback_score']:.0f}/100", help="40% weight")
+                with col2:
+                    st.metric("Velocity Score", f"{row['velocity_score']:.0f}/100", help="35% weight")
+                with col3:
+                    st.metric("Engagement Score", f"{row['engagement_score']:.0f}/100", help="25% weight")
+                
+                st.markdown("---")
+                
+                if flags:
+                    for flag in flags:
+                        st.markdown(f"{flag['severity']} **{flag['issue']}** - Candidate: `{flag['candidate']}`")
+                else:
+                    st.success("✅ No violations - excellent performance!")
         
         st.markdown("---")
 
-def show_hm_view(hms, teams, df):
-    """Show hiring manager performance"""
+def show_hm_view(hms, teams, df, violations):
+    """Show hiring manager performance with detailed metrics"""
     st.header("🎯 Hiring Manager Performance")
     
-    for idx, row in hms.sort_values('score', ascending=False).iterrows():
+    for idx, row in hms.sort_values('final_score', ascending=False).iterrows():
         col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
         
         with col1:
-            st.write(f"**{row['hiring_manager_name']}**")
+            st.write(f"**{row['name']}**")
         
         with col2:
-            if st.button(f"🚩 {row['violations']} issues", key=f"hm_{idx}"):
+            if st.button(f"🚩 {row['total_violations']} issues", key=f"hm_{idx}"):
                 st.session_state[f"show_hm_{idx}"] = not st.session_state.get(f"show_hm_{idx}", False)
         
         with col3:
-            score_color = "🟢" if row['score'] >= 70 else "🟡" if row['score'] >= 50 else "🔴"
-            st.write(f"{score_color} {row['score']:.0f}/100")
+            score_color = "🟢" if row['final_score'] >= 70 else "🟡" if row['final_score'] >= 50 else "🔴"
+            st.write(f"{score_color} {row['final_score']:.0f}/100")
         
         with col4:
-            hm_teams = teams[teams['hm'] == row['hiring_manager_name']]['team_name'].tolist()
+            hm_teams = teams[teams['hm'] == row['name']]['team_name'].tolist()
             st.caption(f"Teams: {len(hm_teams)}")
         
         if st.session_state.get(f"show_hm_{idx}", False):
-            person_data = df[df['hiring_manager_name'] == row['hiring_manager_name']]
-            flags = generate_flags(person_data, row['violations'])
+            flags = get_top_flags(violations, row['name'], 'hm')
             
-            with st.expander("⚠️ Top Issues", expanded=True):
-                for flag in flags:
-                    st.markdown(f"{flag['severity']} **{flag['issue']}** - Candidate: `{flag['candidate']}`")
+            with st.expander("⚠️ Top Issues & Metrics", expanded=True):
+                # Show metric breakdown
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Feedback Score", f"{row['feedback_score']:.0f}/100", help="40% weight")
+                with col2:
+                    st.metric("Velocity Score", f"{row['velocity_score']:.0f}/100", help="35% weight")
+                with col3:
+                    st.metric("Engagement Score", f"{row['engagement_score']:.0f}/100", help="25% weight")
+                
+                st.markdown("---")
+                
+                if flags:
+                    for flag in flags:
+                        st.markdown(f"{flag['severity']} **{flag['issue']}** - Candidate: `{flag['candidate']}`")
+                else:
+                    st.success("✅ No violations - excellent performance!")
         
         st.markdown("---")
 
@@ -365,7 +412,7 @@ def main():
         return
     
     # Load data
-    df, teams, recruiters, hms = load_data()
+    df, teams, recruiters, hms, violations = load_data()
     
     if df is None:
         return
@@ -385,33 +432,30 @@ def main():
     
     # Role-based navigation
     if role == 'recruiter':
-        # Recruiter sees: Team Leaderboard + Recruiter Performance
         page = st.sidebar.radio("View", ["🏆 Team Leaderboard", "👥 My Performance"])
         
         if page == "🏆 Team Leaderboard":
-            show_team_leaderboard(teams, df)
+            show_team_leaderboard(teams, df, violations)
         else:
-            show_recruiter_view(recruiters, teams, df)
+            show_recruiter_view(recruiters, teams, df, violations)
     
     elif role == 'hiring_team':
-        # HM sees: Team Leaderboard + HM Performance
         page = st.sidebar.radio("View", ["🏆 Team Leaderboard", "🎯 My Performance"])
         
         if page == "🏆 Team Leaderboard":
-            show_team_leaderboard(teams, df)
+            show_team_leaderboard(teams, df, violations)
         else:
-            show_hm_view(hms, teams, df)
+            show_hm_view(hms, teams, df, violations)
     
     elif role == 'leader':
-        # Leader sees: Everything
         page = st.sidebar.radio("View", ["🏆 Team Leaderboard", "👥 Recruiters", "🎯 Hiring Managers"])
         
         if page == "🏆 Team Leaderboard":
-            show_team_leaderboard(teams, df)
+            show_team_leaderboard(teams, df, violations)
         elif page == "👥 Recruiters":
-            show_recruiter_view(recruiters, teams, df)
+            show_recruiter_view(recruiters, teams, df, violations)
         else:
-            show_hm_view(hms, teams, df)
+            show_hm_view(hms, teams, df, violations)
 
 if __name__ == "__main__":
     main()
