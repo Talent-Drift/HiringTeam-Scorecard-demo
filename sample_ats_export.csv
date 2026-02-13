@@ -1,0 +1,12 @@
+requisition_id,job_title,team,recruiter_name,hiring_manager_name,role_opened_date,current_status,stage,stage_entered_date,interview_completed_date,feedback_submitted_date,interviewer_name,is_hiring_manager_interview
+REQ-2025-1001,Software Engineer,Engineering,Sarah Chen,Tom Brady,2024-12-01,Technical Interview,Phone Screen,2024-12-05 10:00:00,2024-12-05 14:00:00,2024-12-06 10:00:00,Sarah Chen,False
+REQ-2025-1001,Software Engineer,Engineering,Sarah Chen,Tom Brady,2024-12-01,Technical Interview,Technical Interview,2024-12-10 10:00:00,2024-12-11 10:00:00,2024-12-12 14:00:00,Tom Brady,True
+REQ-2025-1002,Marketing Manager,Marketing,Amanda Taylor,Emily Davis,2024-12-05,Phone Screen,Phone Screen,2024-12-10 09:00:00,2024-12-12 09:00:00,2024-12-15 18:00:00,Amanda Taylor,False
+REQ-2025-1003,Sales Associate,Sales,David Park,Jennifer Lopez,2024-12-08,Final Interview,Phone Screen,2024-12-12 11:00:00,2024-12-13 11:00:00,2024-12-14 16:00:00,David Park,False
+REQ-2025-1003,Sales Associate,Sales,David Park,Jennifer Lopez,2024-12-08,Final Interview,Technical Interview,2024-12-18 16:00:00,2024-12-19 16:00:00,2024-12-21 10:00:00,Jennifer Lopez,True
+REQ-2025-1003,Sales Associate,Sales,David Park,Jennifer Lopez,2024-12-08,Final Interview,Final Interview,2024-12-26 10:00:00,2024-12-27 10:00:00,2024-12-30 14:00:00,Jennifer Lopez,True
+REQ-2025-1004,Product Designer,Product,Lisa Anderson,Priya Patel,2024-12-10,Offer,Phone Screen,2024-12-14 10:00:00,2024-12-15 10:00:00,2024-12-16 12:00:00,Lisa Anderson,False
+REQ-2025-1004,Product Designer,Product,Lisa Anderson,Priya Patel,2024-12-10,Offer,Technical Interview,2024-12-20 12:00:00,2024-12-21 12:00:00,2024-12-22 16:00:00,Priya Patel,True
+REQ-2025-1004,Product Designer,Product,Lisa Anderson,Priya Patel,2024-12-10,Offer,Final Interview,2024-12-28 16:00:00,2024-12-29 16:00:00,2024-12-30 20:00:00,Priya Patel,True
+REQ-2025-1005,DevOps Engineer,Engineering,Mike Rodriguez,Alex Kumar,2024-12-15,Technical Interview,Phone Screen,2024-12-18 09:00:00,2024-12-19 09:00:00,2024-12-20 11:00:00,Mike Rodriguez,False
+REQ-2025-1005,DevOps Engineer,Engineering,Mike Rodriguez,Alex Kumar,2024-12-15,Technical Interview,Technical Interview,2024-12-24 11:00:00,2024-12-25 11:00:00,2024-12-26 13:00:00,Alex Kumar,True
