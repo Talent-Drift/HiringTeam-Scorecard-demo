@@ -382,42 +382,54 @@ def show_signin():
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Three clickable cards
+        # Three clickable cards - using actual buttons styled as cards
         col_a, col_b, col_c = st.columns(3)
         
         with col_a:
-            if st.button("", key="signin_recruiter", use_container_width=True, help="Sign in as Recruiter"):
-                pass  # Placeholder for styling
+            # Recruiter card (beige)
             st.markdown("""
-                <div class='signin-card signin-recruiter' onclick='document.querySelector("[data-testid=\\'stButton\\'] button").click()'>
-                    <div class='signin-icon'>👥</div>
-                    <div class='signin-title'>Recruiter</div>
+                <div style='text-align: center; margin: 15px;'>
+                    <div style='background: linear-gradient(135deg, #f5f5dc 0%, #e8dcc4 100%);
+                                padding: 50px 30px; border-radius: 12px; border: 2px solid #d4a574;'>
+                        <div style='font-size: 3em; margin-bottom: 15px;'>👥</div>
+                        <div style='font-family: "Libre Baskerville", serif; font-size: 1.8em; 
+                                    font-weight: 700; color: #1a365d;'>Recruiter</div>
+                    </div>
                 </div>
             """, unsafe_allow_html=True)
-            # Hidden actual button
-            if st.button("Click Recruiter", key="btn_recruiter", help="Sign in"):
+            if st.button("Sign in as Recruiter", key="btn_recruiter", use_container_width=True):
                 st.session_state['role'] = 'recruiter'
                 st.rerun()
         
         with col_b:
+            # Hiring Team card (navy - swapped with leader)
             st.markdown("""
-                <div class='signin-card signin-hm'>
-                    <div class='signin-icon'>🎯</div>
-                    <div class='signin-title'>Hiring Team</div>
+                <div style='text-align: center; margin: 15px;'>
+                    <div style='background: linear-gradient(135deg, #1a365d 0%, #2c5f9e 100%);
+                                padding: 50px 30px; border-radius: 12px; border: 2px solid #1a365d;'>
+                        <div style='font-size: 3em; margin-bottom: 15px;'>🎯</div>
+                        <div style='font-family: "Libre Baskerville", serif; font-size: 1.8em; 
+                                    font-weight: 700; color: #f5f5dc;'>Hiring Team</div>
+                    </div>
                 </div>
             """, unsafe_allow_html=True)
-            if st.button("Click Hiring Team", key="btn_hm"):
+            if st.button("Sign in as Hiring Team", key="btn_hm", use_container_width=True):
                 st.session_state['role'] = 'hiring_team'
                 st.rerun()
         
         with col_c:
+            # Leader card (sand - swapped with hiring team)
             st.markdown("""
-                <div class='signin-card signin-leader'>
-                    <div class='signin-icon'>🏆</div>
-                    <div class='signin-title' style='color: #f5f5dc;'>Leader</div>
+                <div style='text-align: center; margin: 15px;'>
+                    <div style='background: linear-gradient(135deg, #d4a574 0%, #c99a65 100%);
+                                padding: 50px 30px; border-radius: 12px; border: 2px solid #d4a574;'>
+                        <div style='font-size: 3em; margin-bottom: 15px;'>🏆</div>
+                        <div style='font-family: "Libre Baskerville", serif; font-size: 1.8em; 
+                                    font-weight: 700; color: #1a365d;'>Leader</div>
+                    </div>
                 </div>
             """, unsafe_allow_html=True)
-            if st.button("Click Leader", key="btn_leader"):
+            if st.button("Sign in as Leader", key="btn_leader", use_container_width=True):
                 st.session_state['role'] = 'leader'
                 st.rerun()
 
@@ -617,3 +629,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
